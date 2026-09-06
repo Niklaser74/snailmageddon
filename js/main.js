@@ -936,9 +936,9 @@ if (snigelpost.available()) {
   // coming back from a confirmation link, a login link or Google
   const afterAuth = async (back) => {
     if (back.type === 'error') {
-      if (back.code === 'identity_already_exists') {
-        // the Google account already has a player account: with nothing on this
-        // device worth keeping, just sign in as it; otherwise let the player decide
+      if (back.code === 'identity_already_exists' || back.code === 'email_exists') {
+        // the Google account (or its e-mail) already has a player account: with nothing
+        // on this device worth keeping, just sign in as it; otherwise let the player decide
         const mine = await snigelpost.list().catch(() => [{}]);
         if (!mine.length) return goGoogle(false);
         $('account-msg').textContent = t('account.googleTaken'); $('btn-google-login').hidden = false;

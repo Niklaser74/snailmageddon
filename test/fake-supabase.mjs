@@ -240,11 +240,18 @@ export function createFakeSupabase() {
           const redirect = url.searchParams.get('redirect_to'), link = url.searchParams.get('link');
           if (link) {
             if (google.owner && google.owner !== link) return back(redirect, '#error=server_error&error_code=identity_already_exists&error_description=Identity+is+already+linked+to+another+user');
+            // Supabase refuses to link when the Google e-mail belongs to another user, and puts the error in the query string
+            const other = [...accounts.entries()].find(([id, a]) => id !== link && a.email === google.email);
+            if (other) return route.fulfill({ status: 302, headers: { ...cors, Location: redirect + '?error=invalid_request&error_code=email_exists&error_description=A+user+with+this+email+address+has+already+been+registered' } });
             const a = accounts.get(link); a.email = google.email; a.provider = 'google'; google.owner = link;
             const tok = 'tok-' + link + '-' + (++seq); users.set(tok, link);
             return back(redirect, `#access_token=${tok}&refresh_token=ref-${link}&expires_in=3600&token_type=bearer`);
           }
-          if (!google.owner) { const id = uuid(); accounts.set(id, { email: google.email, pendingEmail: null, provider: 'google' }); google.owner = id; }
+          if (!google.owner) {
+            const existing = [...accounts.entries()].find(([, a]) => a.email === google.email);
+            if (existing) { existing[1].provider = 'google'; google.owner = existing[0]; }
+            else { const id = uuid(); accounts.set(id, { email: google.email, pendingEmail: null, provider: 'google' }); google.owner = id; }
+          }
           const tok = 'tok-' + google.owner + '-' + (++seq); users.set(tok, google.owner);
           return back(redirect, `#access_token=${tok}&refresh_token=ref-${google.owner}&expires_in=3600&token_type=bearer`);
         }

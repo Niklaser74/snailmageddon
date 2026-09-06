@@ -646,6 +646,27 @@ await test('Google: link an anonymous account, sign in with it elsewhere, a take
   await ctxA.close(); await ctxB.close(); await ctxC.close();
 });
 
+await test('Google: the e-mail already has an account (linked by e-mail earlier): a fresh device signs in as it', async () => {
+  // Dana linked her account by e-mail; later she presses Google with the same address on a new device
+  const ctxA = await browser.newContext(), ctxB = await browser.newContext();
+  const a = await ctxA.newPage(); a.setDefaultTimeout(20000); await fake.install(a);
+  await a.goto(base + '/'); await a.waitForFunction(() => !document.getElementById('account-row').hidden);
+  await a.fill('#opt-email', 'dana@example.test'); await a.click('#btn-link-email');
+  await a.waitForFunction(() => /Confirmation sent|Bekräftelse skickad/.test(document.getElementById('account-status').textContent));
+  const mail = fake.mails[fake.mails.length - 1];
+  await a.goto('about:blank'); await a.goto(base + '/' + fake.clickMail(mail));
+  await a.waitForFunction(() => /dana@example.test/.test(document.getElementById('account-status').textContent));
+  const uidA = await a.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id);
+  fake.google.owner = null; fake.google.email = 'dana@example.test';
+  const b = await ctxB.newPage(); b.setDefaultTimeout(20000); await fake.install(b);
+  await b.goto(base + '/'); await b.waitForFunction(() => !document.getElementById('account-row').hidden);
+  await b.click('#btn-google'); // link is refused with email_exists in the query string, then it signs in as Dana
+  await b.waitForFunction(() => /via Google/.test(document.getElementById('account-status')?.textContent || ''));
+  assert.equal(await b.evaluate(() => location.search), '', 'the error is removed from the URL');
+  assert.equal(await b.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidA);
+  await ctxA.close(); await ctxB.close();
+});
+
 await test('profile: pick a look, locked items stay locked, the look shows up in matches', async () => {
   const { page, errors } = await open('/?seed=4242');
   await page.waitForFunction(() => document.querySelectorAll('#pick-shell button').length === 7 && document.querySelectorAll('#pick-hat button').length === 7);

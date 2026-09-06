@@ -143,10 +143,13 @@ export const online = {
   // Returns the link type, 'error' with a message, or null when there was nothing.
   handleRedirect() {
     const h = location.hash.startsWith('#') ? location.hash.slice(1) : '';
-    if (!h) return null;
-    const q = new URLSearchParams(h);
+    let q = new URLSearchParams(h);
+    // OAuth errors come in the query string (sometimes in both); the session only in the fragment
+    const qs = new URLSearchParams(location.search);
+    if (!q.get('access_token') && !q.get('error') && qs.get('error')) q = new URLSearchParams(qs);
     if (!q.get('access_token') && !q.get('error')) return null;
-    history.replaceState(null, '', location.pathname + location.search);
+    for (const k of ['error', 'error_code', 'error_description']) qs.delete(k);
+    history.replaceState(null, '', location.pathname + ([...qs].length ? '?' + qs : ''));
     if (q.get('error')) return { type: 'error', code: q.get('error_code') || null, message: (q.get('error_description') || q.get('error')).replace(/\+/g, ' ') };
     const access = q.get('access_token');
     saveSession({ access_token: access, refresh_token: q.get('refresh_token'), expires_at: Date.now() + (+q.get('expires_in') || 3600) * 1000, user_id: jwtSub(access) });
