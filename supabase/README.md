@@ -181,7 +181,7 @@ kontorutan); Poki-läget döljer hela rutan.
 - Anonymt konto på enheten: `GET /auth/v1/user/identities/authorize?provider=google&skip_http_redirect=true`
   med kontots token ger en URL som webbläsaren skickas till. Efter Googles
   samtycke får **samma** användar-id en Google-identitet; matcher och profil
-  följer med. Kräver **Allow manual linking** (Authentication → Settings).
+  följer med. Kräver **Allow manual linking** (Authentication → Sign In / Providers, överst).
 - Om Google-kontot redan hör till ett annat spelarkonto svarar Supabase med
   `error_code=identity_already_exists` i URL-fragmentet. Har enheten inga
   matcher loggar spelet in som det kontot direkt (`/auth/v1/authorize`);
@@ -197,9 +197,9 @@ kontorutan); Poki-läget döljer hela rutan.
    OAuth consent screen (appnamn, e-post, hemsida https://snails.se,
    integritetspolicy https://snails.se/privacy.html) och publicera den, annars
    får bara testanvändare logga in.
-2. Supabase → Authentication → Providers → Google: på, Client ID och Client
+2. Supabase → Authentication → Sign In / Providers → Google: på, Client ID och Client
    Secret från steg 1.
-3. Supabase → Authentication → Settings → **Allow manual linking**: på.
+3. Supabase → Authentication → Sign In / Providers → sektionen User Signups överst → **Allow manual linking**: på.
 4. Redirect URLs (Authentication → URL Configuration): `https://snails.se/**`
    och `https://niklaser74.github.io/snails/**`, som för e-postlänkarna.
 

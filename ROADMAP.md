@@ -64,7 +64,7 @@ Sådant som kräver konton, nycklar eller en riktig webbläsare, i den ordning
 det ger mest:
 
 1. **Google-inloggning**: OAuth-klient i Google Cloud, Client ID/Secret under
-   Authentication → Providers → Google, **Allow manual linking** på, och
+   Authentication → Sign In / Providers → Google, **Allow manual linking** (samma sida, överst) på, och
    Redirect URLs `https://snails.se/**` och
    `https://niklaser74.github.io/snails/**`. Steg för steg i
    `supabase/README.md` (Konton).
