@@ -169,14 +169,50 @@ Guldskal och cylinder köps via Stripe Checkout. Flödet
 Köpvillkor och ångerrätt: ett digitalt köp levereras direkt. Skriv en rad om
 det på Checkout-sidan (Stripe → Settings → Branding/Terms) innan live.
 
-# E-postkoppling av kontot
+# Konton: Google och e-post
 
-Ett anonymt konto kan kopplas till en e-postadress i menyn (Snigelpost →
-E-post → Koppla kontot). Klienten (`js/supa.js`) anropar `PUT /auth/v1/user`
-med adressen; Supabase skickar mallen "Change Email Address" med en
-bekräftelselänk. När länken klickas är kontot permanent (samma användar-id,
-matcherna följer med) och länken skickar webbläsaren tillbaka till spelet med
-sessionen i URL-fragmentet, som `handleRedirect()` sparar.
+Ett anonymt konto blir permanent på två sätt. Menyn visar båda (Snigelpost →
+kontorutan); Poki-läget döljer hela rutan.
+
+## Google (huvudvägen)
+
+"Fortsätt med Google" (`js/supa.js` `googleUrl`):
+
+- Anonymt konto på enheten: `GET /auth/v1/user/identities/authorize?provider=google&skip_http_redirect=true`
+  med kontots token ger en URL som webbläsaren skickas till. Efter Googles
+  samtycke får **samma** användar-id en Google-identitet; matcher och profil
+  följer med. Kräver **Allow manual linking** (Authentication → Settings).
+- Om Google-kontot redan hör till ett annat spelarkonto svarar Supabase med
+  `error_code=identity_already_exists` i URL-fragmentet. Har enheten inga
+  matcher loggar spelet in som det kontot direkt (`/auth/v1/authorize`);
+  annars visas en varning och en knapp för att byta konto.
+- Återkomsten är samma som för e-postlänkar: sessionen i URL-fragmentet, som
+  `handleRedirect()` sparar. Google-konton har e-post, så köp fungerar.
+
+**Inställningar som krävs:**
+
+1. Google Cloud Console → APIs & Services → Credentials → Create OAuth client
+   ID (Web application). Authorized redirect URI:
+   `https://zhkgsbbrxcrbwriztoxx.supabase.co/auth/v1/callback`. Fyll i
+   OAuth consent screen (appnamn, e-post, hemsida https://snails.se,
+   integritetspolicy https://snails.se/privacy.html) och publicera den, annars
+   får bara testanvändare logga in.
+2. Supabase → Authentication → Providers → Google: på, Client ID och Client
+   Secret från steg 1.
+3. Supabase → Authentication → Settings → **Allow manual linking**: på.
+4. Redirect URLs (Authentication → URL Configuration): `https://snails.se/**`
+   och `https://niklaser74.github.io/snails/**`, som för e-postlänkarna.
+
+Google-inloggningen delas med nissebus (samma projekt); nissebus behöver inte
+använda den.
+
+## E-post (reserv)
+
+Klienten anropar `PUT /auth/v1/user` med adressen; Supabase skickar mallen
+"Change Email Address" med en bekräftelselänk. När länken klickas är kontot
+permanent (samma användar-id, matcherna följer med) och länken skickar
+webbläsaren tillbaka till spelet med sessionen i URL-fragmentet, som
+`handleRedirect()` sparar.
 
 På en annan enhet skriver spelaren samma adress och väljer "Skicka
 inloggningslänk": `POST /auth/v1/otp` med `create_user: false`, så en
@@ -184,12 +220,62 @@ felstavad adress kan aldrig skapa ett nytt konto. Länken loggar in som samma
 användare. Den anonyma sessionen på den enheten ersätts; matcher som spelats
 anonymt där följer inte med (gränssnittet säger det).
 
-**Inställningar som krävs i Supabase** (Authentication → URL Configuration):
-lägg till `https://snails.se/**` och `https://niklaser74.github.io/snails/**`
-under Redirect URLs. Utan det vägrar Supabase `redirect_to` och länkarna går
-till projektets Site URL i stället. E-postmallarna (Authentication → Email
-Templates) delas med nissebus; texten i "Change Email Address" och "Magic Link"
-bör nämna båda apparna, eller hållas neutral.
+### Egen SMTP via Resend
+
+Supabases inbyggda avsändare (`noreply@mail.app.supabase.io`) får skicka
+**2 mejl i timmen** per projekt och är bara avsedd för utveckling. Loggarna
+(`auth_logs`, `over_email_send_rate_limit`) visar när gränsen slår till;
+spelet visar då "För många mejl just nu" och pekar på Google.
+
+1. Resend (resend.com, gratis upp till 3 000 mejl/mån): Domains → Add
+   `snails.se`. Lägg in posterna Resend visar i Cloudflare DNS (en TXT för
+   DKIM, MX + TXT för `send.snails.se`, valfritt DMARC). Vänta på "Verified".
+2. Resend → API Keys → skapa en nyckel med Sending access.
+3. Supabase → Authentication → SMTP Settings → Enable Custom SMTP:
+   Sender email `noreply@snails.se`, Sender name `Snäckmageddon`,
+   Host `smtp.resend.com`, Port `465`, Username `resend`, Password = nyckeln.
+4. Supabase → Authentication → Rate Limits → "Rate limit for sending emails":
+   höj från 2 till t.ex. 30 per timme.
+
+Inställningen gäller hela projektet, alltså även nissebus, vars mejl då också
+går via snails.se-adressen. Vill du ha olika avsändare per app krävs separata
+projekt.
+
+### Länkar som tål Gmails skanner
+
+Gmail (och en del företagsfilter) öppnar länkar i inkommande mejl innan
+mottagaren ser dem. Supabases standardlänk (`{{ .ConfirmationURL }}`) är en
+engångslänk, så skannern förbrukar den och spelaren får "Email link is invalid
+or has expired" (syns i `auth_logs` som `/verify` från en Google-IP).
+
+Klienten klarar därför också länkar med `?token_hash=…&type=…`: sidan visar
+knappen "Bekräfta", och först vid tryck anropas `POST /auth/v1/verify`
+(`verifyToken` i `js/supa.js`). Skannrar trycker inte på knappar.
+
+Byt länken i mallarna (Authentication → Email Templates), villkorat så att
+nissebus behåller standardlänken:
+
+Magic Link:
+```
+{{ if eq .RedirectTo "https://snails.se/" }}
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=magiclink">Logga in i Snäckmageddon</a>
+{{ else }}
+<a href="{{ .ConfirmationURL }}">Logga in</a>
+{{ end }}
+```
+
+Change Email Address:
+```
+{{ if eq .RedirectTo "https://snails.se/" }}
+<a href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=email_change">Bekräfta e-postadressen för Snäckmageddon</a>
+{{ else }}
+<a href="{{ .ConfirmationURL }}">Bekräfta e-postadressen</a>
+{{ end }}
+```
+
+`.RedirectTo` är exakt det klienten skickar (`location.origin + location.pathname`,
+alltså `https://snails.se/`). GitHub Pages-adressen kan läggas till med ett
+`or`. Mallbytet kan göras när som helst; båda länkvarianterna fungerar.
 
 Regelversioner (`migrations/20260904230000_rules_versions.sql`): tabellen
 `snails_rules` säger vilka versioner som får skapa matcher och när en

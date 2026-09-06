@@ -139,10 +139,14 @@
       <div id="account" class="account">
         <p class="hint" id="account-status"></p>
         <div class="row" id="account-row" hidden>
+          <button id="btn-google" class="secondary" data-i18n="account.google">Fortsätt med Google</button>
+          <span class="hint" data-i18n="account.orEmail">…eller med e-post:</span>
           <label><span data-i18n="account.email">E-post</span> <input type="email" id="opt-email" maxlength="80" autocomplete="email"></label>
           <button id="btn-link-email" class="secondary" data-i18n="account.link">Koppla kontot</button>
           <button id="btn-login-email" class="secondary" data-i18n="account.login">Skicka inloggningslänk</button>
         </div>
+        <button id="btn-confirm-link" class="primary" data-i18n="account.confirm" hidden>Bekräfta</button>
+        <button id="btn-google-login" class="secondary" data-i18n="account.googleLogin" hidden>Logga in med det Google-kontot i stället</button>
         <button id="btn-logout" class="secondary small" data-i18n="account.logout" hidden>Logga ut på den här enheten</button>
         <p class="hint" id="account-msg"></p>
       </div>

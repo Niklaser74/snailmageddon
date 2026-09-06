@@ -897,7 +897,7 @@ if (snigelpost.available()) {
     const st = $('account-status'), row = $('account-row'), out = $('btn-logout');
     try {
       const u = await online.user(true);
-      if (u.email && !u.anonymous) { st.textContent = t('account.linked', { email: u.email }); row.hidden = true; out.hidden = false; }
+      if (u.email && !u.anonymous) { st.textContent = t(u.provider === 'google' ? 'account.linkedVia' : 'account.linked', { email: u.email }); row.hidden = true; out.hidden = false; }
       else if (u.pendingEmail) { st.textContent = t('account.pending', { email: u.pendingEmail }); row.hidden = false; out.hidden = true; }
       else { st.textContent = t('account.anonymous'); row.hidden = false; out.hidden = true; }
     } catch { st.textContent = t('online.accountHint'); row.hidden = true; out.hidden = true; }
@@ -907,20 +907,68 @@ if (snigelpost.available()) {
     if (!emailOk(email)) { $('account-msg').textContent = t('account.invalid'); return; }
     btn.disabled = true;
     try { $('account-msg').textContent = await fn(email); track('account', { action: btn.id }); }
-    catch (e) { $('account-msg').textContent = /signups? not allowed|not found|otp_disabled/i.test(e.message) ? t('account.noAccount') : t('account.error', { msg: e.message }); }
+    catch (e) { $('account-msg').textContent = accountError(e); }
     btn.disabled = false;
     renderAccount();
   });
+  const accountError = (e) => {
+    if (e.code === 'rate_limit') return t('account.rateLimited');
+    if (e.code === 'email_exists' || /already been registered/i.test(e.message)) return t('account.emailTaken');
+    if (/signups? not allowed|not found|otp_disabled/i.test(e.message)) return t('account.noAccount');
+    return t('account.error', { msg: e.message });
+  };
+  // Google: an anonymous account is linked (keeps its id and matches); with no
+  // usable session at all we sign in as the account that owns the Google identity.
+  const LS_BEFORE = 'snackmageddon.beforeOauth';
+  const goGoogle = async (link) => {
+    try {
+      try { sessionStorage.setItem(LS_BEFORE, online.userId() || ''); } catch { /* ignore */ }
+      const url = await online.googleUrl(redirectTo(), link);
+      track('account', { action: link ? 'google-link' : 'google-login' });
+      location.assign(url);
+    } catch (e) { $('account-msg').textContent = accountError(e); }
+  };
+  $('btn-google').addEventListener('click', () => goGoogle(!!online.userId()));
+  $('btn-google-login').addEventListener('click', () => goGoogle(false));
   accountAction($('btn-link-email'), async (email) => { await online.linkEmail(email, redirectTo()); return t('account.linkSent', { email }); });
   accountAction($('btn-login-email'), async (email) => { await online.sendLoginLink(email, redirectTo()); return t('account.loginSent', { email }); });
   $('btn-logout').addEventListener('click', () => { online.signOut(); location.reload(); });
-  // coming back from a confirmation or login link
-  const back = online.handleRedirect();
-  if (back && back.type !== 'error') online.ensureUserId().catch(() => {});
-  if (back) {
-    if (back.type === 'error') $('account-msg').textContent = t('account.error', { msg: back.message });
-    else $('account-msg').textContent = t(back.type === 'magiclink' ? 'account.welcomeLogin' : 'account.welcomeLinked');
+  // coming back from a confirmation link, a login link or Google
+  const afterAuth = async (back) => {
+    if (back.type === 'error') {
+      if (back.code === 'identity_already_exists') {
+        // the Google account already has a player account: with nothing on this
+        // device worth keeping, just sign in as it; otherwise let the player decide
+        const mine = await snigelpost.list().catch(() => [{}]);
+        if (!mine.length) return goGoogle(false);
+        $('account-msg').textContent = t('account.googleTaken'); $('btn-google-login').hidden = false;
+      } else $('account-msg').textContent = t('account.error', { msg: back.message });
+    } else {
+      const now = await online.ensureUserId().catch(() => null);
+      let before = null;
+      try { before = sessionStorage.getItem(LS_BEFORE); sessionStorage.removeItem(LS_BEFORE); } catch { /* ignore */ }
+      const sameAccount = back.type === 'email_change' || (back.type === 'oauth' && !!before && before === now);
+      $('account-msg').textContent = t(sameAccount ? 'account.welcomeLinked' : 'account.welcomeLogin');
+      if (!sameAccount) refreshMatchList();
+    }
     track('account', { action: back.type });
+    renderAccount();
+  };
+  const back = online.handleRedirect();
+  if (back) afterAuth(back);
+  // scanner-proof e-mail link: ?token_hash=…&type=… needs a press before it is spent
+  const q = new URLSearchParams(location.search);
+  if (q.get('token_hash') && q.get('type')) {
+    const tokenHash = q.get('token_hash'), type = q.get('type');
+    q.delete('token_hash'); q.delete('type');
+    history.replaceState(null, '', location.pathname + ([...q].length ? '?' + q : ''));
+    $('account-msg').textContent = t('account.confirmHint');
+    $('btn-confirm-link').hidden = false;
+    $('btn-confirm-link').addEventListener('click', async () => {
+      $('btn-confirm-link').disabled = true;
+      try { afterAuth(await online.verifyToken(tokenHash, type)); $('btn-confirm-link').hidden = true; }
+      catch (e) { $('account-msg').textContent = accountError(e); $('btn-confirm-link').disabled = false; }
+    });
   }
   renderAccount();
 

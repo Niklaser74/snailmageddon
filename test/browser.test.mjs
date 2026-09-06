@@ -588,6 +588,64 @@ await test('account: link an e-mail, then sign in with a login link on another d
   await ctxA.close(); await ctxB.close();
 });
 
+await test('Google: link an anonymous account, sign in with it elsewhere, a taken identity offers login; rate limit and scanner-proof links', async () => {
+  const ctxA = await browser.newContext(), ctxB = await browser.newContext(), ctxC = await browser.newContext();
+  const a = await ctxA.newPage(); a.setDefaultTimeout(20000); await fake.install(a);
+  await a.goto(base + '/'); await a.waitForFunction(() => !document.getElementById('account-row').hidden);
+  await a.fill('#opt-name', 'Anna'); await a.click('#btn-online-create');
+  await a.waitForSelector('#waiting:not([hidden])');
+  const uidA = [...fake.matches.values()][fake.matches.size - 1].host;
+  await a.click('#btn-wait-menu');
+  // A links the anonymous account: same user id afterwards, the match is still there
+  await a.click('#btn-google');
+  await a.waitForFunction(() => /via Google/.test(document.getElementById('account-status').textContent));
+  assert.equal(await a.evaluate(() => location.hash), '');
+  assert.match(await a.locator('#account-msg').textContent(), /now linked|nu kopplat/);
+  assert.equal(await a.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidA);
+  assert.equal(fake.google.owner, uidA);
+  await a.waitForSelector('.mrow');
+  // B: a fresh device signs in with the same Google account and becomes A
+  const b = await ctxB.newPage(); b.setDefaultTimeout(20000); await fake.install(b);
+  await b.goto(base + '/'); await b.waitForFunction(() => !document.getElementById('account-row').hidden);
+  await b.click('#btn-google'); // two hops: the link attempt is refused, then it signs in as the owner
+  await b.waitForFunction(() => /signed in|inloggad/i.test(document.getElementById('account-msg')?.textContent || ''));
+  await b.waitForSelector('.mrow');
+  assert.equal(await b.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidA);
+  // C: anonymous with a match of its own; the Google identity already belongs to A
+  const c = await ctxC.newPage(); c.setDefaultTimeout(20000); await fake.install(c);
+  await c.goto(base + '/'); await c.waitForFunction(() => !document.getElementById('account-row').hidden);
+  await c.fill('#opt-name', 'Carl'); await c.click('#btn-online-create');
+  await c.waitForSelector('#waiting:not([hidden])'); await c.click('#btn-wait-menu');
+  const uidC = await c.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id);
+  assert.notEqual(uidC, uidA);
+  await c.click('#btn-google');
+  await c.waitForFunction(() => /another player account|annat spelarkonto/.test(document.getElementById('account-msg')?.textContent || ''));
+  assert.equal(await c.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidC, 'still Carl until he chooses to switch');
+  await c.click('#btn-google-login');
+  await c.waitForFunction(() => /via Google/.test(document.getElementById('account-status').textContent));
+  assert.equal(await c.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidA);
+  // e-mail rate limit is explained, not shown as a raw error
+  await c.click('#btn-logout'); await c.waitForFunction(() => !document.getElementById('account-row').hidden);
+  fake.google.rateLimited = true;
+  await c.fill('#opt-email', 'carl@example.test'); await c.click('#btn-link-email');
+  await c.waitForFunction(() => /Too many e-mails|För många mejl/.test(document.getElementById('account-msg').textContent));
+  fake.google.rateLimited = false;
+  // scanner-proof link: ?token_hash needs a press, the first visit spends nothing
+  await c.click('#btn-link-email');
+  await c.waitForFunction(() => /Confirmation sent|Bekräftelse skickad/.test(document.getElementById('account-status').textContent));
+  const mail = fake.mails[fake.mails.length - 1];
+  assert.equal(mail.kind, 'email_change');
+  await c.goto('about:blank'); await c.goto(`${base}/?token_hash=${mail.tokenHash}&type=email_change`);
+  await c.waitForSelector('#btn-confirm-link:not([hidden])');
+  assert.equal(await c.evaluate(() => location.search), '', 'the token is removed from the URL');
+  assert.equal(mail.spent, undefined, 'loading the page must not spend the token');
+  await c.click('#btn-confirm-link');
+  await c.waitForFunction(() => /linked to carl@example.test|kopplat till carl@example.test/.test(document.getElementById('account-status').textContent));
+  assert.equal(mail.spent, true);
+  assert.equal(await c.locator('#btn-confirm-link').isHidden(), true);
+  await ctxA.close(); await ctxB.close(); await ctxC.close();
+});
+
 await test('profile: pick a look, locked items stay locked, the look shows up in matches', async () => {
   const { page, errors } = await open('/?seed=4242');
   await page.waitForFunction(() => document.querySelectorAll('#pick-shell button').length === 7 && document.querySelectorAll('#pick-hat button').length === 7);

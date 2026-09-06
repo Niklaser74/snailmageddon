@@ -5,6 +5,7 @@ export function createFakeSupabase() {
   const users = new Map(); // token -> user id
   const accounts = new Map(); // user id -> { email, pendingEmail }
   const mails = []; // e-mails Supabase would have sent: { to, kind, uid }
+  const google = { owner: null, email: 'player@gmail.com', rateLimited: false }; // the one Google identity the fake knows about
   const supportedRules = [2, 3]; // mirrors snails_rules on the server
   const dailyRows = new Map(); // `${day}/${uid}` -> row
   const profiles = new Map(); // uid -> { name, look }
@@ -227,17 +228,46 @@ export function createFakeSupabase() {
         const session = (id) => { const tok = 'tok-' + id + '-' + (++seq); users.set(tok, id); return { access_token: tok, refresh_token: 'ref-' + id, expires_in: 3600, user: { id } }; };
         if (sub === 'signup' && req.method() === 'POST') { const id = uuid(); accounts.set(id, { email: null, pendingEmail: null }); return json(200, session(id)); }
         if (sub.startsWith('token') && req.method() === 'POST') { const id = String(body.refresh_token || '').replace(/^ref-/, ''); if (!accounts.has(id)) return json(400, { error: 'invalid refresh token' }); return json(200, session(id)); }
-        if (sub === 'user' && req.method() === 'GET') { if (!uid) return json(401, { msg: 'not signed in' }); const a = accounts.get(uid); return json(200, { id: uid, email: a.email || undefined, new_email: a.pendingEmail || undefined, is_anonymous: !a.email }); }
+        if (sub === 'user' && req.method() === 'GET') { if (!uid) return json(401, { msg: 'not signed in' }); const a = accounts.get(uid); return json(200, { id: uid, email: a.email || undefined, new_email: a.pendingEmail || undefined, is_anonymous: !a.email, identities: a.provider ? [{ provider: a.provider }] : [] }); }
+        // Google: the browser is sent to a fake consent page that comes straight back with the result
+        const back = (redirect, frag) => route.fulfill({ status: 302, headers: { ...cors, Location: redirect + frag } });
+        if (sub.startsWith('user/identities/authorize') && req.method() === 'GET') {
+          if (!uid) return json(401, { msg: 'not signed in' });
+          return json(200, { url: `${url.origin}/auth/v1/fake-google?link=${uid}&redirect_to=${encodeURIComponent(url.searchParams.get('redirect_to'))}` });
+        }
+        // (a redirect hop to another supabase URL is not routed by Playwright, so /authorize answers directly)
+        if ((sub.startsWith('authorize') || sub.startsWith('fake-google')) && req.method() === 'GET') {
+          const redirect = url.searchParams.get('redirect_to'), link = url.searchParams.get('link');
+          if (link) {
+            if (google.owner && google.owner !== link) return back(redirect, '#error=server_error&error_code=identity_already_exists&error_description=Identity+is+already+linked+to+another+user');
+            const a = accounts.get(link); a.email = google.email; a.provider = 'google'; google.owner = link;
+            const tok = 'tok-' + link + '-' + (++seq); users.set(tok, link);
+            return back(redirect, `#access_token=${tok}&refresh_token=ref-${link}&expires_in=3600&token_type=bearer`);
+          }
+          if (!google.owner) { const id = uuid(); accounts.set(id, { email: google.email, pendingEmail: null, provider: 'google' }); google.owner = id; }
+          const tok = 'tok-' + google.owner + '-' + (++seq); users.set(tok, google.owner);
+          return back(redirect, `#access_token=${tok}&refresh_token=ref-${google.owner}&expires_in=3600&token_type=bearer`);
+        }
+        if (sub === 'verify' && req.method() === 'POST') {
+          const mail = mails.find((m) => m.tokenHash === body.token_hash && m.kind === body.type && !m.spent);
+          if (!mail) return json(403, { msg: 'Email link is invalid or has expired', error_code: 'otp_expired' });
+          mail.spent = true;
+          const a = accounts.get(mail.uid);
+          if (mail.kind === 'email_change') { a.email = a.pendingEmail; a.pendingEmail = null; }
+          return json(200, session(mail.uid));
+        }
         if (sub.startsWith('user') && req.method() === 'PUT') {
           if (!uid) return json(401, { msg: 'not signed in' });
           if ([...accounts.values()].some((a) => a.email === body.email)) return json(422, { msg: 'A user with this email address has already been registered' });
-          accounts.get(uid).pendingEmail = body.email; mails.push({ to: body.email, kind: 'email_change', uid, redirect: url.searchParams.get('redirect_to') });
+          if (google.rateLimited) return json(429, { code: 429, error_code: 'over_email_send_rate_limit', msg: 'email rate limit exceeded' });
+          accounts.get(uid).pendingEmail = body.email; mails.push({ to: body.email, kind: 'email_change', uid, redirect: url.searchParams.get('redirect_to'), tokenHash: 'th-' + (++seq) });
           return json(200, { id: uid, new_email: body.email, is_anonymous: true });
         }
         if (sub.startsWith('otp') && req.method() === 'POST') {
           const owner = [...accounts.entries()].find(([, a]) => a.email === body.email);
           if (!owner) return json(422, { msg: 'Signups not allowed for otp' });
-          mails.push({ to: body.email, kind: 'magiclink', uid: owner[0], redirect: url.searchParams.get('redirect_to') });
+          if (google.rateLimited) return json(429, { code: 429, error_code: 'over_email_send_rate_limit', msg: 'email rate limit exceeded' });
+          mails.push({ to: body.email, kind: 'magiclink', uid: owner[0], redirect: url.searchParams.get('redirect_to'), tokenHash: 'th-' + (++seq) });
           return json(200, {});
         }
         return json(404, { msg: 'no such auth endpoint ' + sub });
@@ -283,5 +313,5 @@ export function createFakeSupabase() {
     const tok = 'tok-' + mail.uid + '-' + (++seq); users.set(tok, mail.uid);
     return `#access_token=${tok}&refresh_token=ref-${mail.uid}&expires_in=3600&token_type=bearer&type=${mail.kind}`;
   }
-  return { handle, matches, turns, series, events, pushes, notifies, accounts, mails, clickMail, dailyRows, profiles, ratings, purchases, checkouts, awards, grant: (uid, item) => { if (!purchases.has(uid)) purchases.set(uid, new Set()); purchases.get(uid).add(item); }, install: (page) => page.route('**/*.supabase.co/**', handle) };
+  return { handle, matches, turns, series, events, pushes, notifies, accounts, mails, clickMail, google, dailyRows, profiles, ratings, purchases, checkouts, awards, grant: (uid, item) => { if (!purchases.has(uid)) purchases.set(uid, new Set()); purchases.get(uid).add(item); }, install: (page) => page.route('**/*.supabase.co/**', handle) };
 }

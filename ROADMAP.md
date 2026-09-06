@@ -1,6 +1,6 @@
 # Snäckmageddon – utvecklingsplan
 
-Uppdaterad 2026-09-05. Spelet är publikt på https://snails.se, på
+Uppdaterad 2026-09-06. Spelet är publikt på https://snails.se, på
 https://knackpot.itch.io/snailmageddon och som förberedda byggen för Poki och
 Google Play.
 
@@ -35,7 +35,7 @@ göra det lätt att sprida (delbara replays).
 | Klart | Kvar |
 |---|---|
 | Deterministisk simulering, replay, hash, regelversioner med solnedgång (`docs/REGELVERSIONER.md`) | Serversidig verifiering av drag: edge-funktion spelar upp inspelningen |
-| Anonyma konton, e-postkoppling, inloggningslänk på andra enheter | Åskådarläge och delbar replay av färdig match |
+| Anonyma konton, Google-inloggning (kopplar det anonyma kontot), e-postkoppling och inloggningslänk som reserv, skannertåliga länkar | Åskådarläge och delbar replay av färdig match |
 | Matcher, drag, inbjudan via länk med Open Graph-taggar | |
 | Serier bäst av 1/3/5, revansch, ge upp, vinst efter 14 dagars tystnad, städjobb | |
 | Push-notiser (egen Web Push, VAPID i Vault), ställning i notisen | |
@@ -63,19 +63,24 @@ göra det lätt att sprida (delbara replays).
 Sådant som kräver konton, nycklar eller en riktig webbläsare, i den ordning
 det ger mest:
 
-1. **Supabase Redirect URLs**: Authentication → URL Configuration → lägg till
-   `https://snails.se/**` och `https://niklaser74.github.io/snails/**`. Utan det
-   hamnar e-postlänkarna fel. Kolla också att e-postmallarna passar både
-   nissebus och spelet.
-2. **Kontroll i webbläsaren** att https://snails.se/.well-known/assetlinks.json
+1. **Google-inloggning**: OAuth-klient i Google Cloud, Client ID/Secret under
+   Authentication → Providers → Google, **Allow manual linking** på, och
+   Redirect URLs `https://snails.se/**` och
+   `https://niklaser74.github.io/snails/**`. Steg för steg i
+   `supabase/README.md` (Konton).
+2. **E-post via Resend**: domän `snails.se` i Resend, SMTP-uppgifterna i
+   Supabase, höj mejlgränsen. Den inbyggda avsändaren tillåter 2 mejl/timme
+   och Gmail förbrukar engångslänkarna; byt mallarna till `token_hash`-länken
+   enligt README.
+3. **Kontroll i webbläsaren** att https://snails.se/.well-known/assetlinks.json
    och https://snails.se/privacy.html svarar (sandlådan når inte snails.se).
-3. **Poki**: utvecklarkonto och inskick enligt `docs/store/poki.md`.
-4. **Google Play**: `bubblewrap build` i `android/`, uppladdning, fingeravtryck
+4. **Poki**: utvecklarkonto och inskick enligt `docs/store/poki.md`.
+5. **Google Play**: `bubblewrap build` i `android/`, uppladdning, fingeravtryck
    i `assetlinks.json`, butikssida enligt `docs/store/google-play.md`.
-5. **Stripe**: konto, två produkter, fyra hemligheter, webhook enligt
+6. **Stripe**: konto, två produkter, fyra hemligheter, webhook enligt
    `supabase/README.md`. Köpknapparna aktiveras av sig själva när nycklarna
    finns.
-6. **nissebus**: beslut om `pranks`-policyerna (släpper in anonyma spelare) och
+7. **nissebus**: beslut om `pranks`-policyerna (släpper in anonyma spelare) och
    när Snigelpost ska få ett eget Supabase-projekt.
 
 ## Nästa period (byggarbete, i prioritetsordning)
@@ -120,6 +125,10 @@ det ger mest:
   sajten; annars går testerna inte att styra och cachen kan ge gamla svar.
 - **Parallella anrop vid start skapade två konton.** Inloggningen delas nu
   mellan alla som frågar samtidigt.
+- **Supabases inbyggda e-post räcker inte ens för test.** Två mejl i timmen,
+  och Gmails länkskanner förbrukar engångslänkarna. Löst i koden: Google som
+  huvudväg, klick-bekräftade `token_hash`-länkar; kvar för dig: Resend som
+  SMTP och mallbytet.
 - **Visuellt och simulering hålls isär.** Teman, kosmetik, spår, sprickor och
   slow motion rör aldrig hashen. Facit-testerna bevakar det.
 

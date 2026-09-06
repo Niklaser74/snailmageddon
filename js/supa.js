@@ -21,12 +21,19 @@ async function authFetch(path, method, body, token) {
   if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(`${SUPABASE_URL}/auth/v1/${path}`, { method, headers, cache: 'no-store', body: body === undefined ? undefined : JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.msg || data.error_description || data.error || data.message || `auth ${res.status}`);
+  if (!res.ok) {
+    const err = new Error(data.msg || data.error_description || data.error || data.message || `auth ${res.status}`);
+    err.code = res.status === 429 ? 'rate_limit' : (data.error_code || data.code || null);
+    err.status = res.status;
+    throw err;
+  }
   return data;
 }
+function sessionFrom(data) {
+  return { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: Date.now() + (data.expires_in || 3600) * 1000, user_id: data.user?.id || jwtSub(data.access_token) };
+}
 async function authRequest(path, body) {
-  const data = await authFetch(path, 'POST', body);
-  return { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: Date.now() + (data.expires_in || 3600) * 1000, user_id: data.user?.id };
+  return sessionFrom(await authFetch(path, 'POST', body));
 }
 function jwtSub(token) {
   try { return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub || null; } catch { return null; }
@@ -96,8 +103,31 @@ export const online = {
     if (userCache && !fresh) return userCache;
     const token = await this.token();
     const u = await authFetch('user', 'GET', undefined, token);
-    userCache = { id: u.id, email: u.email || null, pendingEmail: u.new_email || null, anonymous: u.is_anonymous !== false && !u.email };
+    const provider = (u.identities || []).map((i) => i.provider).find((p) => p && p !== 'email') || u.app_metadata?.provider || null;
+    userCache = { id: u.id, email: u.email || null, pendingEmail: u.new_email || null, anonymous: u.is_anonymous !== false && !u.email, provider: provider === 'email' ? null : provider };
     return userCache;
+  },
+  // ---------- Google ----------
+  // link=true: the signed-in (anonymous) account gets a Google identity and keeps
+  // its id and matches ("Allow manual linking" must be on in the project).
+  // link=false: sign in as whichever account owns the Google identity.
+  // Returns the URL to send the browser to; Supabase comes back to redirectTo
+  // with the session in the fragment, exactly like an e-mail link.
+  async googleUrl(redirectTo, link) {
+    const q = `provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
+    if (!link) return `${SUPABASE_URL}/auth/v1/authorize?${q}`;
+    const token = await this.token();
+    const data = await authFetch(`user/identities/authorize?${q}&skip_http_redirect=true`, 'GET', undefined, token);
+    if (!data.url) throw new Error('no authorize url');
+    return data.url;
+  },
+  // Scanner-proof e-mail links: the mail carries ?token_hash=…&type=… to the game,
+  // and the session is only created when the player presses a button.
+  async verifyToken(tokenHash, type) {
+    const data = await authFetch('verify', 'POST', { type, token_hash: tokenHash });
+    saveSession(sessionFrom(data));
+    userCache = null;
+    return { type };
   },
   async linkEmail(email, redirectTo) {
     const token = await this.token();
@@ -117,11 +147,11 @@ export const online = {
     const q = new URLSearchParams(h);
     if (!q.get('access_token') && !q.get('error')) return null;
     history.replaceState(null, '', location.pathname + location.search);
-    if (q.get('error')) return { type: 'error', message: q.get('error_description') || q.get('error') };
+    if (q.get('error')) return { type: 'error', code: q.get('error_code') || null, message: (q.get('error_description') || q.get('error')).replace(/\+/g, ' ') };
     const access = q.get('access_token');
     saveSession({ access_token: access, refresh_token: q.get('refresh_token'), expires_at: Date.now() + (+q.get('expires_in') || 3600) * 1000, user_id: jwtSub(access) });
     userCache = null;
-    return { type: q.get('type') || 'unknown' };
+    return { type: q.get('type') || 'oauth' }; // OAuth returns carry no type
   },
   // userId() may be unknown right after a redirect (no JWT payload); ask the server once
   async ensureUserId() {
