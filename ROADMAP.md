@@ -1,6 +1,6 @@
 # Snäckmageddon – utvecklingsplan
 
-Uppdaterad 2026-09-06. Spelet är publikt på https://snails.se, på
+Uppdaterad 2026-09-08. Spelet är publikt på https://snails.se, på
 https://knackpot.itch.io/snailmageddon och som förberedda byggen för Poki och
 Google Play.
 
@@ -35,7 +35,7 @@ göra det lätt att sprida (delbara replays).
 | Klart | Kvar |
 |---|---|
 | Deterministisk simulering, replay, hash, regelversioner med solnedgång (`docs/REGELVERSIONER.md`) | Serversidig verifiering av drag: edge-funktion spelar upp inspelningen |
-| Anonyma konton, Google-inloggning (kopplar det anonyma kontot), e-postkoppling och inloggningslänk som reserv, skannertåliga länkar | Åskådarläge och delbar replay av färdig match |
+| Anonyma konton, Google-inloggning i drift (kopplar det anonyma kontot), e-post via Resend som reserv, skannertåliga länkar | Åskådarläge och delbar replay av färdig match |
 | Matcher, drag, inbjudan via länk med Open Graph-taggar | |
 | Serier bäst av 1/3/5, revansch, ge upp, vinst efter 14 dagars tystnad, städjobb | |
 | Push-notiser (egen Web Push, VAPID i Vault), ställning i notisen | |
@@ -53,7 +53,7 @@ göra det lätt att sprida (delbara replays).
 ### Fas 4 – Distribution
 | Klart | Kvar |
 |---|---|
-| snails.se via Cloudflare DNS och GitHub Pages, svenska och engelska, mätning i Supabase | App Store via Capacitor (projekt, ikoner, splash och guide kan förberedas; bygget kräver Mac och Apple-konto) |
+| snails.se via Cloudflare DNS och GitHub Pages, svenska och engelska, mätning i Supabase, Knackpot-märke i menyn och på sidorna | App Store via Capacitor (projekt, ikoner, splash och guide kan förberedas; bygget kräver Mac och Apple-konto) |
 | itch.io publikt, butler-push från release-flödet | |
 | Poki: SDK-adapter, Poki-läge utan länkar ut, konton eller köp, zip-bygge, checklista (`docs/store/poki.md`) | |
 | Google Play: manifest, assetlinks, integritetspolicy, Play-läge utan Stripe, Bubblewrap-konfiguration och guide (`docs/store/google-play.md`) | |
@@ -63,15 +63,12 @@ göra det lätt att sprida (delbara replays).
 Sådant som kräver konton, nycklar eller en riktig webbläsare, i den ordning
 det ger mest:
 
-1. **Google-inloggning**: OAuth-klient i Google Cloud, Client ID/Secret under
-   Authentication → Sign In / Providers → Google, **Allow manual linking** (samma sida, överst) på, och
-   Redirect URLs `https://snails.se/**` och
-   `https://niklaser74.github.io/snails/**`. Steg för steg i
-   `supabase/README.md` (Konton).
-2. **E-post via Resend**: domän `snails.se` i Resend, SMTP-uppgifterna i
-   Supabase, höj mejlgränsen. Den inbyggda avsändaren tillåter 2 mejl/timme
-   och Gmail förbrukar engångslänkarna; byt mallarna till `token_hash`-länken
-   enligt README.
+1. **E-post via Resend, kontroll**: SMTP och mejlgränsen (30/timme) är
+   inställda. Kvar: skicka en inloggningslänk från snails.se och se att
+   avsändaren är noreply@snails.se, och byt mallarna till `token_hash`-länken
+   enligt `supabase/README.md` så Gmails skanner inte förbrukar länkarna.
+2. **Google-inloggning**: klar och verifierad i drift 2026-09-08 (Allow manual
+   linking, OAuth-klient, Redirect URLs).
 3. **Kontroll i webbläsaren** att https://snails.se/.well-known/assetlinks.json
    och https://snails.se/privacy.html svarar (sandlådan når inte snails.se).
 4. **Poki**: utvecklarkonto och inskick enligt `docs/store/poki.md`.
