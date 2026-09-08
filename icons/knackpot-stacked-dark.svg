@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="380" height="300" viewBox="0 0 380 300">
+  <rect width="380" height="300" fill="#111113"></rect>
+  <g transform="translate(140 14)" fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M40 140 L40 0" stroke="#DDA257"></path><path d="M40 70 L130 0 M104 0 L130 0 L130 26" stroke="#FAFAF7"></path></g>
+  <circle cx="180" cy="84" r="8" fill="#FAFAF7"></circle>
+  <text x="190" y="252" text-anchor="middle" font-family="Familjen Grotesk, sans-serif" font-weight="700" font-size="56" letter-spacing="-2" fill="#FAFAF7">KNACKPOT</text>
+</svg>
