@@ -63,12 +63,9 @@ göra det lätt att sprida (delbara replays).
 Sådant som kräver konton, nycklar eller en riktig webbläsare, i den ordning
 det ger mest:
 
-1. **E-post via Resend, kontroll**: SMTP och mejlgränsen (30/timme) är
-   inställda. Kvar: skicka en inloggningslänk från snails.se och se att
-   avsändaren är noreply@snails.se, och byt mallarna till `token_hash`-länken
-   enligt `supabase/README.md` så Gmails skanner inte förbrukar länkarna.
-2. **Google-inloggning**: klar och verifierad i drift 2026-09-08 (Allow manual
-   linking, OAuth-klient, Redirect URLs).
+1. **Google-inloggning**: klar och verifierad i drift 2026-09-08.
+2. **E-post via Resend**: klar och verifierad 2026-09-08. Egen SMTP, 30
+   mejl/timme, mallarna använder `token_hash`-länken med Bekräfta-knapp.
 3. **Kontroll i webbläsaren** att https://snails.se/.well-known/assetlinks.json
    och https://snails.se/privacy.html svarar (sandlådan når inte snails.se).
 4. **Poki**: utvecklarkonto och inskick enligt `docs/store/poki.md`.
