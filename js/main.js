@@ -1168,6 +1168,8 @@ function handleGamepad() {
 
 // ---------- platform ----------
 if (!platform.allowExternalLinks) {
+  $('brand-by').dataset.i18nHtml = 'app.byPlain'; // maker's mark stays, without the link
+  applyLanguage();
   for (const a of document.querySelectorAll('a[href]')) a.hidden = true;
   $('btn-install').hidden = true;
 }

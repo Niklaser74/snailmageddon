@@ -6,6 +6,7 @@ const dict = {
   sv: {
     'app.name': 'Snäckmageddon',
     'app.tagline': 'Turbaserat artilleri med afrikanska jättesnäckor. Långsamma. Skalade. Dödliga.',
+    'app.by': 'En <a href="https://knackpot.se" target="_blank" rel="noopener">Knackpot</a>-produkt', 'app.byPlain': 'En Knackpot-produkt',
     'menu.teams': 'Lag', 'menu.per': 'Snäckor per lag', 'menu.style': 'Snäckstil', 'menu.lang': 'Språk',
     'menu.start': 'Starta match', 'menu.design': 'Snäckdesign', 'menu.help': 'Så spelar du', 'menu.install': 'Installera app',
     'menu.offline': 'Spelet är sparat för offline-spel.', 'menu.human': 'Människa', 'menu.ai': 'Dator',
@@ -115,6 +116,7 @@ const dict = {
   en: {
     'app.name': 'Snailmageddon',
     'app.tagline': 'Turn-based artillery with giant African land snails. Slow. Shelled. Deadly.',
+    'app.by': 'A <a href="https://knackpot.se" target="_blank" rel="noopener">Knackpot</a> product', 'app.byPlain': 'A Knackpot product',
     'menu.teams': 'Teams', 'menu.per': 'Snails per team', 'menu.style': 'Snail style', 'menu.lang': 'Language',
     'menu.start': 'Start match', 'menu.design': 'Snail designs', 'menu.help': 'How to play', 'menu.install': 'Install app',
     'menu.offline': 'The game is saved for offline play.', 'menu.human': 'Human', 'menu.ai': 'Computer',
