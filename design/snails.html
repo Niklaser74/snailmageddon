@@ -24,6 +24,10 @@
   .controls label { display:flex; gap:6px; align-items:center; cursor:pointer; }
   .back { display:inline-flex; align-items:center; min-height:40px; margin-bottom:12px; padding:6px 14px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); font-weight:700; text-decoration:none; }
   .back:hover { background:#efe6d6; }
+  .brand { display:flex; align-items:center; justify-content:center; gap:10px; margin:32px auto 0; padding-top:14px; border-top:1px dashed var(--line); font-size:13px; color:var(--muted); max-width:1100px; }
+  .brand img { width:64px; height:50px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+  .brand a { color:inherit; font-weight:700; text-decoration:none; }
+  .brand a:hover { text-decoration:underline; }
   footer { max-width:1100px; margin:0 auto; padding: 0 24px 40px; color: var(--muted); font-size: 13px; }
 </style>
 </head>
@@ -39,6 +43,7 @@
 </header>
 <main id="main"></main>
 <footer>Sprite-koden ligger i <code>js/snails.js</code>. Varje stil är ~60–120 rader canvas-ritning och renderas i realtid, så färger och detaljer är enkla att justera.</footer>
+<div class="brand"><img src="../icons/knackpot-stacked-dark.svg" alt="Knackpot" width="64" height="50"> <span>En <a href="https://knackpot.se" target="_blank" rel="noopener">Knackpot</a>-produkt</span></div>
 <script type="module">
   import { drawSnail, SNAIL_STYLES, TEAM_COLORS } from '../js/snails.js';
   const main = document.getElementById('main');
