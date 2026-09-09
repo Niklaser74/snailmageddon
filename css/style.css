@@ -25,6 +25,9 @@ html, body { height: 100%; margin: 0; overflow: hidden; background: #5fb0ea; fon
 .message { flex: 1; text-align: center; color: #fff; font-weight: 800; font-size: 18px; text-shadow: 0 2px 4px rgba(0,0,0,.5); padding-top: 6px; pointer-events: none !important; }
 .hud-wind { display: flex; flex-direction: column; align-items: center; gap: 3px; background: var(--hud); color: #fff; padding: 6px 10px; border-radius: 12px; font-size: 11px; }
 .wind-bar { position: relative; width: 90px; height: 8px; border-radius: 4px; background: rgba(255,255,255,.2); overflow: hidden; }
+.hud-wind[data-level="hard"] #wind-fill { background: #ff9e3d; }
+.hud-wind[data-level="storm"] #wind-fill { background: #ff4d4d; }
+.hud-wind[data-level="storm"] { box-shadow: 0 0 0 2px rgba(255,77,77,.6); }
 .wind-bar::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,.6); }
 #wind-fill { position: absolute; top: 0; height: 100%; background: #ffd54f; width: 0; left: 50%; }
 .hud-teams { position: absolute; top: calc(52px + var(--safe-t)); left: 8px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; }

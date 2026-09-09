@@ -315,6 +315,7 @@ await test('settings: turn time, sudden death, volume and the mute button are re
   assert.equal(await page.inputValue('#opt-volume'), '80');
   await page.selectOption('#opt-turntime', '20');
   await page.selectOption('#opt-sudden', '0');
+  await page.selectOption('#opt-wind', 'storm');
   await page.fill('#opt-volume', '40');
   await page.dispatchEvent('#opt-volume', 'input');
   await page.selectOption('.team-row:nth-child(1) select', 'normal');
@@ -322,8 +323,10 @@ await test('settings: turn time, sudden death, volume and the mute button are re
   await page.click('#btn-start');
   await page.waitForFunction(() => window.__game);
   await page.evaluate(() => { window.__manualTick = true; });
-  const rules = await page.evaluate(() => ({ ...__game.rules, timer: __game.timer, rec: [__game.recording.turnTime, __game.recording.suddenDeath] }));
-  assert.deepEqual(rules, { turnTime: 20, suddenDeath: 0, timer: 20, rec: [20, 0] });
+  const rules = await page.evaluate(() => ({ ...__game.rules, timer: __game.timer, rec: [__game.recording.turnTime, __game.recording.suddenDeath, __game.recording.wind] }));
+  assert.deepEqual(rules, { turnTime: 20, suddenDeath: 0, wind: 'storm', timer: 20, rec: [20, 0, 'storm'] });
+  await page.waitForFunction(() => document.querySelector('.hud-wind').dataset.level === 'storm');
+  assert.equal(await page.locator('.hud-wind .wind-label').textContent(), 'Storm');
   await page.waitForFunction(() => document.getElementById('hud-timer').textContent === '20');
   // the HUD mute button flips the sound and the menu keeps the state
   assert.equal(await page.locator('#btn-mute').textContent(), '🔊');
@@ -335,6 +338,7 @@ await test('settings: turn time, sudden death, volume and the mute button are re
   assert.equal(saved.volume, 0.4);
   assert.equal(saved.turnTime, 20);
   assert.equal(saved.suddenDeath, 0);
+  assert.equal(saved.wind, 'storm');
   // a kill shot switches on slow motion: the loop then advances fewer ticks per real second
   await page.evaluate(() => {
     const g = __game;
@@ -472,7 +476,7 @@ await test('Snigelpost: two players trade turns through the server', async () =>
   // the match was created as best of 3 (the default), so the score shows in the waiting overlay
   assert.equal(fake.series.size, 1);
   assert.equal([...fake.series.values()][0].best_of, 3);
-  assert.deepEqual(fake.matches.get(matchId).config, { snailsPerTeam: 3, turnTime: 45, suddenDeath: 16 }, 'rules missing from the match config');
+  assert.deepEqual(fake.matches.get(matchId).config, { snailsPerTeam: 3, turnTime: 45, suddenDeath: 16, wind: 'normal' }, 'rules missing from the match config');
   // B gives up (two presses): match 1 to A, the series continues with match 2 where B starts
   await b.click('#btn-wait-resign'); await b.click('#btn-wait-resign');
   await b.waitForFunction(() => /gav upp|gave up/i.test(document.getElementById('wait-status').textContent));

@@ -9,6 +9,7 @@ const mk = (seed, teams) => ({ seed, snailsPerTeam: 3, teams });
 for (const [name, cfg] of [
   ['ai-vs-ai', mk(20260904, [{ name: 'A', color: '#f00', ai: true }, { name: 'B', color: '#00f', ai: true }])],
   ['fast-rules', { ...mk(777, [{ name: 'A', color: '#f00', ai: true }, { name: 'B', color: '#00f', ai: true }]), turnTime: 20, suddenDeath: 8 }],
+  ...(RULES_VERSION >= 4 ? [['storm-rules', { ...mk(4242, [{ name: 'A', color: '#f00', ai: 'hard' }, { name: 'B', color: '#00f', ai: 'hard' }]), wind: 'storm' }]] : []),
 ]) {
   const g = new Game(null, cfg);
   const hashes = [];
@@ -17,4 +18,4 @@ for (const [name, cfg] of [
   hashes.push([g.tickCount, g.stateHash()]);
   out.push({ name, ticks: g.tickCount, turns: g.turnCount, phase: g.phase, recording: g.recording, hashes });
 }
-console.log(JSON.stringify({ rulesVersion: RULES_VERSION, generated: '2026-09-04', matches: out }));
+console.log(JSON.stringify({ rulesVersion: RULES_VERSION, generated: new Date().toISOString().slice(0, 10), matches: out }));

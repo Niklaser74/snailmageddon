@@ -1,4 +1,4 @@
-import { Game, WEAPONS, TICK, RULES_VERSION, rulesSupported, DEFAULT_RULES, TURN_TIMES, SUDDEN_DEATHS, normalizeRules } from './game.js';
+import { Game, WEAPONS, TICK, RULES_VERSION, rulesSupported, DEFAULT_RULES, TURN_TIMES, SUDDEN_DEATHS, WINDS, normalizeRules } from './game.js';
 import { snigelpost } from './online.js';
 import { online } from './supa.js';
 import { daily, dailyConfig, dayKey, weaponFor } from './daily.js';
@@ -156,14 +156,17 @@ $('opt-theme').addEventListener('change', () => { settings.theme = $('opt-theme'
 // rules: turn time and sudden death
 for (const v of TURN_TIMES) $('opt-turntime').append(new Option(t('menu.seconds', { n: v }), v));
 for (const v of SUDDEN_DEATHS) $('opt-sudden').append(new Option(v === 0 ? t('menu.suddenOff') : t('menu.suddenAfter', { n: v }), v));
+for (const v of WINDS) $('opt-wind').append(new Option(t('wind.' + v), v));
 $('opt-turntime').value = settings.turnTime;
 $('opt-sudden').value = settings.suddenDeath;
+$('opt-wind').value = settings.wind;
 function renderRuleOptions() {
   [...$('opt-turntime').options].forEach((o) => { o.textContent = t('menu.seconds', { n: +o.value }); });
   [...$('opt-sudden').options].forEach((o) => { o.textContent = +o.value === 0 ? t('menu.suddenOff') : t('menu.suddenAfter', { n: +o.value }); });
+  [...$('opt-wind').options].forEach((o) => { o.textContent = t('wind.' + o.value); });
 }
 function readRules() {
-  const r = normalizeRules({ turnTime: $('opt-turntime').value, suddenDeath: $('opt-sudden').value });
+  const r = normalizeRules({ turnTime: $('opt-turntime').value, suddenDeath: $('opt-sudden').value, wind: $('opt-wind').value });
   Object.assign(settings, r);
   return r;
 }
@@ -1082,6 +1085,7 @@ canvas.addEventListener('wheel', (e) => {
 
 // ---------- HUD ----------
 const windFill = $('wind-fill');
+const hudWind = document.querySelector('.hud-wind');
 function updateHud(now) {
   if (!game || now - hudLast < 80) return;
   hudLast = now;
@@ -1093,6 +1097,10 @@ function updateHud(now) {
   timer.classList.toggle('low', st.phase === 'aim' && st.timer < 10);
   $('hud-message').textContent = fmt(st.message);
   const w = Math.abs(st.wind) * 45;
+  if (hudWind.dataset.level !== st.windLevel) {
+    hudWind.dataset.level = st.windLevel;
+    hudWind.querySelector('.wind-label').textContent = t(st.windLevel === 'normal' ? 'hud.wind' : 'hud.wind_' + st.windLevel);
+  }
   windFill.style.width = w + 'px';
   windFill.style.left = st.wind >= 0 ? '50%' : `calc(50% - ${w}px)`;
   const rows = $('hud-teams');

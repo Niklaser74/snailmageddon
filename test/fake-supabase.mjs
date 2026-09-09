@@ -6,7 +6,7 @@ export function createFakeSupabase() {
   const accounts = new Map(); // user id -> { email, pendingEmail }
   const mails = []; // e-mails Supabase would have sent: { to, kind, uid }
   const google = { owner: null, email: 'player@gmail.com', rateLimited: false }; // the one Google identity the fake knows about
-  const supportedRules = [2, 3]; // mirrors snails_rules on the server
+  const supportedRules = [3, 4]; // mirrors snails_rules on the server
   const dailyRows = new Map(); // `${day}/${uid}` -> row
   const profiles = new Map(); // uid -> { name, look }
   const purchases = new Map(); // uid -> Set(item)

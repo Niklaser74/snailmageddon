@@ -9,7 +9,7 @@ import { TEAM_COLORS } from './snails.js';
 export const snigelpost = {
   available() { return online.available(); },
 
-  // config: { snailsPerTeam, turnTime, suddenDeath }
+  // config: { snailsPerTeam, turnTime, suddenDeath, wind }
   async create(config, name, bestOf = 3) {
     return online.rpc('snails_create_match', {
       p_seed: (Math.random() * 2147483647) | 0,
@@ -86,7 +86,7 @@ export const snigelpost = {
     const inputs = turns.flatMap((t) => t.inputs);
     const opts = { localTeams: myTeam == null ? [] : [myTeam] };
     if (turns.length) {
-      opts.replay = { rulesVersion: match.rules_version, seed: match.seed, teams: cfg.teams, snailsPerTeam: cfg.snailsPerTeam, turnTime: cfg.turnTime, suddenDeath: cfg.suddenDeath, inputs };
+      opts.replay = { rulesVersion: match.rules_version, seed: match.seed, teams: cfg.teams, snailsPerTeam: cfg.snailsPerTeam, turnTime: cfg.turnTime, suddenDeath: cfg.suddenDeath, wind: cfg.wind, inputs };
       opts.liveAfter = match.tick_count;
     }
     const game = new Game(canvas, cfg, hooks, opts);

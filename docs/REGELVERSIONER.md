@@ -11,9 +11,10 @@ av simuleringen som ger en annan hash (`stateHash()`) är därför en ny
    och matchraden på servern (`snails_matches.rules_version`) säger vilken
    version matchen startades med. Den ändras aldrig under matchen.
 2. **Spelet kör flera versioner samtidigt.** `SUPPORTED_RULES` i `js/game.js`
-   listar dem (idag 2 och 3). `new Game(...)` tar versionen från inspelningen
+   listar dem (idag 3 och 4). `new Game(...)` tar versionen från inspelningen
    eller matchen och ställer in sig efter den: vapenlista, och vid behov
-   gränser i logiken (`if (this.rulesVersion >= 4) …`). Nya matcher startas
+   gränser i logiken, som vindregeln: `if (this.rulesVersion >= 4)` läser
+   `rules.wind`, annars spelas normal vind. Nya matcher startas
    alltid med `RULES_VERSION`.
 3. **Fönstret är aktuell + föregående.** När en ny version införs blir den
    äldsta i fönstret pensionerad. Servern får ett solnedgångsdatum för den

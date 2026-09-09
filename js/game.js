@@ -15,8 +15,9 @@ import { dsin, dcos, dhypot, datan2 } from './dmath.js';
 //   1: first Snigelpost rules
 //   2: crates, slime ball, salt rain, ammo
 //   3: shell shove, snail hop (weapons with since: 3)
-export const RULES_VERSION = 3;
-export const SUPPORTED_RULES = [2, 3];
+//   4: wind strength rule (normal / hard / storm)
+export const RULES_VERSION = 4;
+export const SUPPORTED_RULES = [3, 4];
 export function rulesSupported(v) { return SUPPORTED_RULES.includes(v); }
 // Fixed simulation step. The sim only ever advances by exactly this much.
 export const TICK = 1 / 60;
@@ -64,14 +65,19 @@ const SNAIL_SCALE = 1.2;
 const WIND_FORCE = 140;
 // Rules a match can change in the menu. They are part of the recording and of
 // a Snigelpost match's config, so every device plays by the same rules.
-export const DEFAULT_RULES = { turnTime: 45, suddenDeath: 16 }; // suddenDeath = turn after which the water rises, 0 = never
+export const DEFAULT_RULES = { turnTime: 45, suddenDeath: 16, wind: 'normal' }; // suddenDeath = turn after which the water rises, 0 = never
 export const TURN_TIMES = [20, 30, 45, 60, 90];
 export const SUDDEN_DEATHS = [0, 8, 12, 16, 24];
+// Wind rule (rules version 4+): force multiplier, and whether every airborne
+// projectile drifts (storm) or only the ones flagged wind: true (bazooka, salt rain).
+export const WINDS = ['normal', 'hard', 'storm'];
+export const WIND_LEVELS = { normal: { force: 1, all: false }, hard: { force: 1.8, all: false }, storm: { force: 2.5, all: true } };
 export function normalizeRules(cfg) {
-  const tt = +cfg?.turnTime, sd = +cfg?.suddenDeath;
+  const tt = +cfg?.turnTime, sd = +cfg?.suddenDeath, wd = cfg?.wind;
   return {
     turnTime: TURN_TIMES.includes(tt) ? tt : DEFAULT_RULES.turnTime,
     suddenDeath: SUDDEN_DEATHS.includes(sd) ? sd : DEFAULT_RULES.suddenDeath,
+    wind: WINDS.includes(wd) ? wd : DEFAULT_RULES.wind,
   };
 }
 const RETREAT_TIME = 4;
@@ -149,6 +155,7 @@ export class Game {
       snailsPerTeam: config.snailsPerTeam || 3,
       turnTime: this.rules.turnTime,
       suddenDeath: this.rules.suddenDeath,
+      wind: this.rules.wind,
       teamSizes: config.teamSizes || undefined,
       mode: this.daily ? 'daily' : undefined,
       dailyWeapon: this.daily ? this.daily.weapon : undefined,
@@ -180,7 +187,7 @@ export class Game {
 
   static fromRecording(canvas, rec, hooks = {}, style = 'cartoon') {
     if (!rulesSupported(rec.rulesVersion)) throw new Error(`Inspelningen har regelversion ${rec.rulesVersion}, spelet stöder ${SUPPORTED_RULES.join(', ')}`);
-    return new Game(canvas, { teams: rec.teams, snailsPerTeam: rec.snailsPerTeam, teamSizes: rec.teamSizes, turnTime: rec.turnTime, suddenDeath: rec.suddenDeath, mode: rec.mode, dailyWeapon: rec.dailyWeapon, style }, hooks, { replay: rec });
+    return new Game(canvas, { teams: rec.teams, snailsPerTeam: rec.snailsPerTeam, teamSizes: rec.teamSizes, turnTime: rec.turnTime, suddenDeath: rec.suddenDeath, wind: rec.wind, mode: rec.mode, dailyWeapon: rec.dailyWeapon, style }, hooks, { replay: rec });
   }
 
   // ---------- fixed-step driver ----------
@@ -787,7 +794,8 @@ export class Game {
       if (p.fuse && p.age >= p.fuse) return 'explode';
       return null;
     }
-    if (w.wind) p.vx += this.wind * WIND_FORCE * dt;
+    const wl = this.rulesVersion >= 4 ? WIND_LEVELS[this.rules.wind] : WIND_LEVELS.normal;
+    if (w.wind || wl.all) p.vx += this.wind * WIND_FORCE * wl.force * dt;
     p.vy += G * dt;
     const steps = Math.ceil(Math.max(Math.abs(p.vx), Math.abs(p.vy)) * dt / 2) || 1;
     const sx = (p.vx * dt) / steps, sy = (p.vy * dt) / steps;
@@ -1551,6 +1559,7 @@ export class Game {
       snail: this.active,
       timer: this.timer,
       wind: this.wind,
+      windLevel: this.rulesVersion >= 4 ? this.rules.wind : 'normal',
       weapon: this.weaponId,
       power: this.power,
       charging: this.charging,

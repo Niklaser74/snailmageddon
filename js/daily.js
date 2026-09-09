@@ -28,6 +28,7 @@ export function dailyConfig(key, style, names) {
     teamSizes: [1, 3],
     turnTime: 45,
     suddenDeath: 0,
+    wind: 'normal',
     style,
     teams: [
       { name: names.me, color: TEAM_COLORS[0].hex, ai: false },

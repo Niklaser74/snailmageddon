@@ -27,7 +27,7 @@ göra det lätt att sprida (delbara replays).
 | Kamerapunch, slow motion vid dödsskott, skal som spricker, skalbitar, slemspår | |
 | Terrängteman: trädgårdsland, strand, regnskog | |
 | AI-nivåer lätt/normal/svår, guide i första matchen, förhandsbana vid sikte | |
-| Regler i menyn (dragtid, plötslig död), mastervolym, ljud av/på i HUD:en | |
+| Regler i menyn (dragtid, plötslig död, vindstyrka normal/hård/storm), mastervolym, ljud av/på i HUD:en | |
 | Tangentbord, touch, handkontroll | |
 | Tester i CI: determinism med facit-inspelningar (Node) och webbläsartester (Playwright) | |
 

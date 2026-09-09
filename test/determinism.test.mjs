@@ -343,13 +343,12 @@ test('current rules version has a fixture and unsupported versions are refused',
   assert.ok(fs.existsSync(path.join(fixtureDir, `rules-v${RULES_VERSION}.json`)), 'the current version needs its golden fixture');
   assert.throws(() => new Game(null, { ...cfg(1), rulesVersion: 1 }), /not supported/);
   assert.throws(() => Game.fromRecording(null, { ...new Game(null, cfg(1)).recording, rulesVersion: 99 }), /regelversion/);
-  // an old version has the old weapon list, and the recording says which version it is
-  const old = new Game(null, { ...cfg(5), rulesVersion: 2 });
-  assert.equal(old.weapons.length, 6);
-  assert.equal(old.recording.rulesVersion, 2);
-  assert.equal(old.teams[0].ammo.skalstot, undefined);
-  old.input.weapon = 'skalstot'; old.tick();
-  assert.equal(old.weaponId, 'bazooka', 'a v3 weapon must not exist in a v2 match');
+  // the previous version still plays, and the recording says which version it is
+  const old = new Game(null, { ...cfg(5), rulesVersion: 3, wind: 'storm' });
+  assert.equal(old.weapons.length, 8);
+  assert.equal(old.recording.rulesVersion, 3);
+  assert.equal(old.recording.wind, 'storm', 'the rule is recorded even when v3 ignores it');
+  assert.equal(old.hudState().windLevel, 'normal', 'v3 plays with normal wind whatever the config says');
 });
 
 test('shot of the day: same map for everyone, one shot, score is the damage, replayable', () => {
@@ -438,14 +437,14 @@ test('terrain themes: picked from the seed, never part of the simulation', () =>
 test('turn time and sudden death are match rules that travel with the recording', () => {
   const base = cfg(99);
   const std = new Game(null, base);
-  assert.deepEqual(std.rules, { turnTime: 45, suddenDeath: 16 }, 'defaults');
+  assert.deepEqual(std.rules, { turnTime: 45, suddenDeath: 16, wind: 'normal' }, 'defaults');
   assert.equal(std.timer, 45);
   const fast = new Game(null, { ...base, turnTime: 20, suddenDeath: 0 });
   assert.equal(fast.timer, 20);
   assert.equal(fast.recording.turnTime, 20);
   assert.equal(fast.recording.suddenDeath, 0);
   // unknown values fall back to the defaults, so a tampered config cannot desync a match
-  assert.deepEqual(new Game(null, { ...base, turnTime: 7, suddenDeath: 'x' }).rules, { turnTime: 45, suddenDeath: 16 });
+  assert.deepEqual(new Game(null, { ...base, turnTime: 7, suddenDeath: 'x', wind: 'hurricane' }).rules, { turnTime: 45, suddenDeath: 16, wind: 'normal' });
   // sudden death off: the water never rises, however long the match runs
   const water0 = fast.waterY;
   run(fast, TICKS);
@@ -455,11 +454,43 @@ test('turn time and sudden death are match rules that travel with the recording'
   // a replay of the fast game uses the fast rules and lands on the same state
   const rec = JSON.parse(JSON.stringify(fast.recording));
   const rep = Game.fromRecording(null, rec);
-  assert.deepEqual(rep.rules, { turnTime: 20, suddenDeath: 0 });
+  assert.deepEqual(rep.rules, { turnTime: 20, suddenDeath: 0, wind: 'normal' });
   run(rep, fast.tickCount);
   assert.equal(rep.stateHash(), fast.stateHash(), 'replay with rules diverged');
   // the timer is part of the state hash, so two devices with different rules notice at once
   assert.notEqual(new Game(null, { ...base, turnTime: 20 }).stateHash(), new Game(null, base).stateHash(), 'turn time not in the hash');
+});
+
+test('wind rule (v4): storm bends every throw, hard only the wind weapons, v3 ignores the rule', () => {
+  // fire one shot with a fixed wind and compare where the projectile is a second later
+  const shoot = (weapon, wind, extra = {}) => {
+    const g = new Game(null, { ...cfg(31), teams: [{ name: 'A', color: '#f00', ai: false }, { name: 'B', color: '#00f', ai: false }], ...extra });
+    g.wind = 1; // deterministic: full wind to the right
+    g.rules.wind = wind; // set after construction so the match seed and terrain are identical
+    g.input.weapon = weapon; g.tick();
+    g.active.aim = 0.9;
+    g.input.fire = true; run(g, 25); g.input.fire = false; g.tick();
+    const p = g.projectiles.find((q) => q.type === weapon);
+    assert.ok(p, `${weapon} should be in the air`);
+    run(g, 30);
+    return p.x;
+  };
+  const gb = shoot('bazooka', 'normal'), hb = shoot('bazooka', 'hard'), sb = shoot('bazooka', 'storm');
+  assert.ok(gb != null && hb != null && sb != null, 'bazooka should still be in the air');
+  assert.ok(hb > gb && sb > hb, `bazooka should drift more with stronger wind: ${gb} ${hb} ${sb}`);
+  const gg = shoot('granat', 'normal'), hg = shoot('granat', 'hard'), sg = shoot('granat', 'storm');
+  assert.equal(hg, gg, 'hard wind must not touch the grenade');
+  assert.ok(sg > gg, `storm must drift the grenade: ${gg} ${sg}`);
+  // rules version 3 never reads the wind rule, whatever the config says
+  assert.equal(shoot('bazooka', 'storm', { rulesVersion: 3 }), shoot('bazooka', 'normal', { rulesVersion: 3 }));
+  // the rule travels with the recording and the replay lands on the same state
+  const g = new Game(null, { ...cfg(32), wind: 'storm' });
+  assert.equal(g.recording.wind, 'storm');
+  run(g, TICKS);
+  const rep = Game.fromRecording(null, JSON.parse(JSON.stringify(g.recording)));
+  assert.equal(rep.rules.wind, 'storm');
+  run(rep, g.tickCount);
+  assert.equal(rep.stateHash(), g.stateHash(), 'storm replay diverged');
 });
 
 if (failed) { console.log(`\n${failed} test(s) failed`); process.exit(1); }

@@ -277,7 +277,8 @@ Change Email Address:
 alltså `https://snails.se/`). GitHub Pages-adressen kan läggas till med ett
 `or`. Mallbytet kan göras när som helst; båda länkvarianterna fungerar.
 
-Regelversioner (`migrations/20260904230000_rules_versions.sql`): tabellen
+Regelversioner (`migrations/20260904230000_rules_versions.sql`, v4 i
+`20260909000000_rules_v4.sql`, version 2 stängs 2026-10-09): tabellen
 `snails_rules` säger vilka versioner som får skapa matcher och när en
 pensionerad version stängs (`sunset_at`). `snails_cleanup` avslutar då
 kvarvarande matcher som oavgjorda. Strategin finns i `docs/REGELVERSIONER.md`.
