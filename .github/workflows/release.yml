@@ -1,12 +1,17 @@
 name: Release build
 
-# Builds the itch.io zip on every version tag (v1.2.3) or on demand, keeps it
-# as a workflow artifact, and pushes it to itch.io with butler when the
-# secrets BUTLER_API_KEY and ITCH_TARGET (user/game) are set.
+# Builds the itch.io and Poki zips on every push to main (so itch.io mirrors
+# snails.se), on version tags (v1.2.3) and on demand, keeps them as workflow
+# artifacts, and pushes the itch build with butler when the secrets
+# BUTLER_API_KEY and ITCH_TARGET (user/game) are set.
 on:
   push:
+    branches: [main]
     tags: ['v*']
   workflow_dispatch:
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -35,5 +40,5 @@ jobs:
         run: |
           curl -sL https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default -o butler.zip
           unzip -q butler.zip -d butler && chmod +x butler/butler
-          VERSION=$(node -p "require('./package.json').version")
+          VERSION=$(node -p "require('./package.json').version")-$(git rev-parse --short HEAD)
           ./butler/butler push dist/snackmageddon-itch.zip "$ITCH_TARGET:html5" --userversion "$VERSION"

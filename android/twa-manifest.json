@@ -21,7 +21,7 @@
     "path": "./android.keystore",
     "alias": "snailmageddon"
   },
-  "appVersionName": "0.3.0",
+  "appVersionName": "0.4.0",
   "appVersionCode": 1,
   "shortcuts": [
     {
@@ -46,5 +46,5 @@
   "orientationLock": false,
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
-  "appVersion": "0.3.0"
+  "appVersion": "0.4.0"
 }

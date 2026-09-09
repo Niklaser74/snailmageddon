@@ -40,6 +40,9 @@ Free and ad-free. If you want to support development, pay what you want.
 2. Skapa en API-nyckel: itch.io → Settings → API keys.
 3. Lägg in två hemligheter i GitHub-repot (Settings → Secrets → Actions):
    `BUTLER_API_KEY` = nyckeln, `ITCH_TARGET` = `dittanvändarnamn/snackmageddon`.
-4. Tagga en version: `git tag v0.3.0 && git push origin v0.3.0`. Arbetsflödet
-   *Release build* bygger zipen, kör testerna och pushar till itch.io.
+4. Varje push till `main` kör arbetsflödet *Release build*: testerna, zipen
+   och butler-push till itch.io, så itch.io följer snails.se. Versionen på
+   itch blir `package.json`-versionen plus commit-hash (t.ex. `0.4.0-a31618b`).
+   Det går också att köra för hand (Actions → Release build → Run workflow)
+   eller tagga (`git tag v0.4.0 && git push origin v0.4.0`).
    Utan hemligheterna byggs zipen ändå och kan hämtas under Actions → Artifacts.
