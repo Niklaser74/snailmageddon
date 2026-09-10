@@ -22,7 +22,7 @@ const skipEvents = args.has('--skip-events');
 const OLD = process.env.OLD_DB_URL, NEW = process.env.NEW_DB_URL;
 if (!OLD || !NEW) { console.error('Set OLD_DB_URL and NEW_DB_URL (see the header of this file).'); process.exit(2); }
 
-const conn = (url) => new pg.Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
+const conn = (url) => new pg.Client({ connectionString: url, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 15000 });
 const old = conn(OLD), neu = conn(NEW);
 
 // Which users travel: referenced by play data, or linked (not anonymous) with a snails profile.
@@ -127,9 +127,13 @@ async function verify(players) {
   return bad;
 }
 
+let neuOpen = false;
 try {
+  console.log('connecting to the old project…');
   await old.connect();
+  console.log('connecting to the new project…');
   await neu.connect();
+  neuOpen = true;
   await old.query('begin isolation level repeatable read read only'); // one consistent snapshot of the old project
   const { rows: [{ ids }] } = await old.query(PLAYERS_SQL);
   const players = ids || [];
@@ -145,8 +149,8 @@ try {
   if (!dryRun) { await neu.query('commit'); console.log('committed'); }
   await old.query('rollback');
 } catch (e) {
-  try { await neu.query('rollback'); } catch { /* not in a transaction */ }
-  console.error('FAILED, nothing committed in the new project:', e.message);
+  if (neuOpen) { try { await neu.query('rollback'); } catch { /* not in a transaction */ } }
+  console.error('FAILED, nothing committed in the new project:', e.code ? `[${e.code}]` : '', e.message || (e.errors || []).map((x) => x.message).join('; '));
   process.exitCode = 1;
 } finally {
   await old.end().catch(() => {});
