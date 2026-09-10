@@ -1208,6 +1208,9 @@ if (platform.useServiceWorker && 'serviceWorker' in navigator && location.protoc
     navigator.serviceWorker.register('sw.js').then(() => {
       $('offline-hint').dataset.ready = '1';
       $('offline-hint').textContent = t('menu.offline');
+      // The game moved from the root of snails.se to /snailmageddon/: a browser that
+      // had notifications on for the old service worker gets them back on this one.
+      push.resubscribe(getLang()).then((s) => { if (s) pushSub = s; });
     }).catch(() => {});
   });
 }

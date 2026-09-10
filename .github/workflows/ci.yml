@@ -20,6 +20,10 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Browser tests
         run: npm run test:browser
+      - name: Browser tests under /snailmageddon/ (the game's path on snails.se)
+        run: npm run test:browser
+        env:
+          PREFIX: /snailmageddon
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4

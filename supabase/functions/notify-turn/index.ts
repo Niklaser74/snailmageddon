@@ -6,7 +6,8 @@ import { sendPush, b64url, b64urlDecode } from './webpush.js';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const SITE = 'https://snails.se';
+const SITE = 'https://snails.se'; // also the VAPID subject: keep it the origin
+const GAME = `${SITE}/snailmageddon`;
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -60,7 +61,7 @@ Deno.serve(async (req) => {
     const vapid = { publicKey, jwk };
 
     // Series (best of 3/5): add the score from the receiver's point of view and open the current match.
-    let score = '', url = `${SITE}/?match=${m.id}`;
+    let score = '', url = `${GAME}/?match=${m.id}`;
     if (m.series_id) {
       const srows = await (await rest(`snails_series?id=eq.${m.series_id}&select=host,best_of,wins_host,wins_guest,status,current_match`)).json();
       const s = srows[0];
@@ -68,7 +69,7 @@ Deno.serve(async (req) => {
         const otherIsHost = s.host === other;
         const [wm, wt] = otherIsHost ? [s.wins_host, s.wins_guest] : [s.wins_guest, s.wins_host];
         if (s.best_of > 1 || wm + wt > 0) score = ` (${wm}–${wt})`;
-        if (s.status !== 'finished' && s.current_match) url = `${SITE}/?match=${s.current_match}`;
+        if (s.status !== 'finished' && s.current_match) url = `${GAME}/?match=${s.current_match}`;
       }
     }
 

@@ -19,8 +19,15 @@ const mime = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml',
   '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.json': 'application/json', '.md': 'text/markdown',
 };
+// PREFIX=/snailmageddon rehearses the game's real place on snails.se, where the
+// hub owns the root; without it the game is served from the root like on itch.
+const PREFIX = (process.env.PREFIX || '').replace(/\/$/, '');
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);
+  if (PREFIX) {
+    if (!p.startsWith(PREFIX + '/')) { res.writeHead(404); res.end(); return; }
+    p = p.slice(PREFIX.length);
+  }
   if (p.endsWith('/')) p += 'index.html';
   const f = path.join(root, p);
   if (!f.startsWith(root) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); res.end(); return; }
@@ -28,7 +35,7 @@ const server = http.createServer((req, res) => {
   res.end(fs.readFileSync(f));
 });
 await new Promise((r) => server.listen(0, r));
-const base = `http://localhost:${server.address().port}`;
+const base = `http://localhost:${server.address().port}${PREFIX}`;
 
 const launchOpts = process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {};
 const browser = await chromium.launch(launchOpts);

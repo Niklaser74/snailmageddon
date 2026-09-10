@@ -1,6 +1,6 @@
 # Snäckmageddon – utvecklingsplan
 
-Uppdaterad 2026-09-08. Spelet är publikt på https://snails.se, på
+Uppdaterad 2026-09-10. Spelet är publikt på https://snails.se/snailmageddon/, på
 https://knackpot.itch.io/snailmageddon och som förberedda byggen för Poki och
 Google Play.
 
@@ -53,7 +53,7 @@ göra det lätt att sprida (delbara replays).
 ### Fas 4 – Distribution
 | Klart | Kvar |
 |---|---|
-| snails.se via Cloudflare DNS och GitHub Pages, svenska och engelska, mätning i Supabase, Knackpot-märke i menyn och på sidorna | App Store via Capacitor (projekt, ikoner, splash och guide kan förberedas; bygget kräver Mac och Apple-konto) |
+| snails.se/snailmageddon/ via GitHub Pages (hubben Niklaser74.github.io äger domänen), svenska och engelska, mätning i Supabase, Knackpot-märke i menyn och på sidorna | App Store via Capacitor (projekt, ikoner, splash och guide kan förberedas; bygget kräver Mac och Apple-konto) |
 | itch.io publikt, butler-push från release-flödet | |
 | Poki: SDK-adapter, Poki-läge utan länkar ut, konton eller köp, zip-bygge, checklista (`docs/store/poki.md`) | |
 | Google Play: manifest, assetlinks, integritetspolicy, Play-läge utan Stripe, Bubblewrap-konfiguration och guide (`docs/store/google-play.md`) | |
@@ -67,7 +67,8 @@ det ger mest:
 2. **E-post via Resend**: klar och verifierad 2026-09-08. Egen SMTP, 30
    mejl/timme, mallarna använder `token_hash`-länken med Bekräfta-knapp.
 3. **assetlinks.json och privacy.html**: kontrollerade i webbläsaren
-   2026-09-08, båda svarar på snails.se.
+   2026-09-08, båda svarar på snails.se. Sedan 2026-09-10 serveras
+   `.well-known/assetlinks.json` från hubbens repo (domänroten).
 4. **Poki**: utvecklarkonto och inskick enligt `docs/store/poki.md`.
 5. **Google Play**: `bubblewrap build` i `android/`, uppladdning, fingeravtryck
    i `assetlinks.json`, butikssida enligt `docs/store/google-play.md`.
