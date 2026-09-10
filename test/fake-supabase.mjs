@@ -288,7 +288,9 @@ export function createFakeSupabase() {
         if (!['gold', 'tophat'].includes(item)) return json(400, { error: 'unknown item' });
         if (!accounts.get(uid)?.email) return json(403, { error: 'email required' });
         checkouts.push({ uid, item });
-        return json(200, { url: `${req.headers()['origin'] || 'http://localhost'}/?bought=${item}`, id: 'cs_test_' + checkouts.length });
+        // Checkout comes straight back to the page's own path (the buy function uses its GAME URL for this)
+        const back = new URL(req.headers()['referer'] || req.headers()['origin'] || 'http://localhost');
+        return json(200, { url: `${back.origin}${back.pathname.replace(/[^/]*$/, '')}?bought=${item}`, id: 'cs_test_' + checkouts.length });
       }
       if (url.pathname === '/functions/v1/notify-turn') {
         const token = (req.headers()['authorization'] || '').replace('Bearer ', '');

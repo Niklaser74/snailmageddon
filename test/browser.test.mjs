@@ -51,7 +51,8 @@ async function test(name, fn) {
 
 // A page that collects console errors and page errors.
 async function open(url, viewport = { width: 1280, height: 720 }, extra = {}) {
-  const page = await browser.newPage({ viewport, ...extra });
+  // en-US like CI's headless Chromium, so the page starts in English wherever the tests run
+  const page = await browser.newPage({ viewport, locale: 'en-US', ...extra });
   page.setDefaultTimeout(20000);
   await fake.install(page);
   const errors = [];
@@ -569,7 +570,7 @@ await test('account: link an e-mail, then sign in with a login link on another d
   await a.waitForFunction(() => /confirm|bekräfta/i.test(document.getElementById('account-msg').textContent));
   await a.waitForFunction(() => /Confirmation sent|Bekräftelse skickad/.test(document.getElementById('account-status').textContent));
   assert.equal(fake.mails.length, 1); assert.equal(fake.mails[0].kind, 'email_change'); assert.equal(fake.mails[0].uid, uidA);
-  assert.match(fake.mails[0].redirect, /^http:\/\/localhost:\d+\/$/);
+  assert.equal(fake.mails[0].redirect, base + '/', 'the link comes back to the page itself, also under a path prefix');
   // clicking the link brings the browser back with the session in the fragment: same user, now linked
   await a.goto('about:blank'); await a.goto(base + '/' + fake.clickMail(fake.mails[0])); // a real link is a fresh page load
   await a.waitForFunction(() => /linked to anna@example.test|kopplat till anna@example.test/.test(document.getElementById('account-status').textContent));
@@ -874,7 +875,7 @@ await test('service worker registers and manifest is valid', async () => {
   assert.ok(manifest.screenshots.length >= 4 && manifest.screenshots.some((s) => s.form_factor === 'narrow'));
   assert.deepEqual(manifest.categories, ['games', 'entertainment']);
   for (const s of manifest.screenshots) assert.equal((await page.evaluate((u) => fetch(u).then((r) => r.status), s.src)), 200, s.src + ' missing');
-  assert.equal(await page.evaluate(() => fetch('.well-known/assetlinks.json').then((r) => r.json()).then((j) => j[0].target.package_name)), 'se.snails.app');
+  // .well-known/assetlinks.json lives in the hub repo (Niklaser74.github.io): Digital Asset Links must answer at the domain root
   assert.equal(await page.evaluate(() => fetch('privacy.html').then((r) => r.status)), 200);
   assert.deepEqual(errors, []);
   await page.close();
