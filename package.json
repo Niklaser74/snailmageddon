@@ -9,10 +9,12 @@
     "test": "node test/determinism.test.mjs && node test/webpush.test.mjs && node test/stripe.test.mjs",
     "test:browser": "node test/browser.test.mjs",
     "test:all": "npm test && npm run test:browser",
-    "build:itch": "node scripts/build-itch.mjs"
+    "build:itch": "node scripts/build-itch.mjs",
+    "migrate:supabase": "node scripts/migrate-supabase.mjs"
   },
   "license": "UNLICENSED",
   "devDependencies": {
+    "pg": "^8.23.0",
     "playwright": "1.56.1"
   }
 }

@@ -50,9 +50,20 @@ export const online = {
   async token() {
     const s = loadSession();
     if (s && s.expires_at - Date.now() > 60000) return s.access_token;
-    // several callers at start-up must share one sign-in, not create one account each
+    return this.refreshOnce();
+  },
+  // several callers at start-up must share one sign-in, not create one account each
+  refreshOnce() {
     if (!pendingToken) pendingToken = this.freshToken().finally(() => { pendingToken = null; });
     return pendingToken;
+  },
+  // One authenticated request. A 401 means the stored access token is no longer
+  // accepted (expired early, or issued by another Supabase project, as after the
+  // move to the snails project): refresh once and try again.
+  async authed(run) {
+    let res = await run(await this.token());
+    if (res.status === 401 && loadSession()?.refresh_token) res = await run(await this.refreshOnce());
+    return res;
   },
   async freshToken() {
     let s = loadSession();
@@ -67,12 +78,11 @@ export const online = {
   },
 
   async rpc(name, args = {}) {
-    const token = await this.token();
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+    const res = await this.authed((token) => fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
       method: 'POST',
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(args),
-    });
+    }));
     const text = await res.text();
     let data = null;
     try { data = text ? JSON.parse(text) : null; } catch { data = text; }
@@ -82,12 +92,11 @@ export const online = {
 
   // Call an edge function as the signed-in user.
   async fn(name, body = {}) {
-    const token = await this.token();
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
+    const res = await this.authed((token) => fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
       method: 'POST',
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-    });
+    }));
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || data.message || `${name} ${res.status}`);
     return data;
@@ -101,8 +110,12 @@ export const online = {
   // any device with a login link to the same address.
   async user(fresh = false) {
     if (userCache && !fresh) return userCache;
-    const token = await this.token();
-    const u = await authFetch('user', 'GET', undefined, token);
+    let u;
+    try { u = await authFetch('user', 'GET', undefined, await this.token()); }
+    catch (e) {
+      if (e.status !== 401 || !loadSession()?.refresh_token) throw e;
+      u = await authFetch('user', 'GET', undefined, await this.refreshOnce());
+    }
     const provider = (u.identities || []).map((i) => i.provider).find((p) => p && p !== 'email') || u.app_metadata?.provider || null;
     userCache = { id: u.id, email: u.email || null, pendingEmail: u.new_email || null, anonymous: u.is_anonymous !== false && !u.email, provider: provider === 'email' ? null : provider };
     return userCache;

@@ -1,5 +1,6 @@
 // Service worker: cache-first app shell so the game works offline.
-const VERSION = 'snackmageddon-v35';
+// Cache names are prefixed per game: everything on snails.se shares one origin.
+const VERSION = 'snailmageddon-v36';
 const ASSETS = [
   './',
   './index.html',
@@ -33,7 +34,7 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k)))).then(() => self.clients.claim())
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => (k.startsWith('snailmageddon-') || k.startsWith('snackmageddon-')) && k !== VERSION).map((k) => caches.delete(k)))).then(() => self.clients.claim())
   );
 });
 
