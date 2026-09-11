@@ -114,8 +114,8 @@ export class Game {
     this.ctx = canvas ? canvas.getContext('2d') : null;
     this.config = config;
     this.hooks = hooks;
-    this.W = 1800;
-    this.H = 800;
+    this.W = config.width || 1800; // a smaller arena for embedded duels (Snäckschack)
+    this.H = config.height || 800;
     this.style = config.style || 'cartoon';
     this.rules = normalizeRules(config);
     this.replay = opts.replay || null;
@@ -275,11 +275,15 @@ export class Game {
     const slots = [];
     for (let i = 0; i < total; i++) slots.push(((i + 0.5) / total) * (this.W - 160) + 80);
     shuffle(slots, this.rng);
+    // config.spawns: fixed x per team and snail ([[x, ...], [x, ...]]), used by
+    // embedded duels. Missing entries fall back to the shuffled slots.
+    const spawns = this.config.spawns || null;
     let si = 0;
     for (let k = 0; k < Math.max(...sizes); k++) {
       for (const team of this.teams) {
         if (k >= sizes[team.index]) continue;
-        const x = Math.round(slots[si++] + (this.rng() - 0.5) * 30);
+        const fixed = spawns?.[team.index]?.[k];
+        const x = fixed != null ? clamp(Math.round(fixed), 20, this.W - 20) : Math.round(slots[si++] + (this.rng() - 0.5) * 30);
         const gy = this.terrain.groundBelow(x, 0);
         const s = {
           id: this.snails.length, name: names[ni++ % names.length], team: team.index, color: team.color,

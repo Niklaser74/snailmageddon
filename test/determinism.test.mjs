@@ -493,5 +493,25 @@ test('wind rule (v4): storm bends every throw, hard only the wind weapons, v3 ig
   assert.equal(rep.stateHash(), g.stateHash(), 'storm replay diverged');
 });
 
+test('arena size and fixed spawns (embedded duels): defaults untouched, config respected', () => {
+  const base = new Game(null, cfg(41));
+  assert.equal(base.W, 1800); assert.equal(base.H, 800);
+  const duel = new Game(null, {
+    seed: 41, width: 900, height: 450, snailsPerTeam: 1, suddenDeath: 0, spawns: [[220], [680]],
+    teams: [{ name: 'A', color: '#f00', ai: 'hard' }, { name: 'B', color: '#00f', ai: false }],
+  });
+  assert.equal(duel.W, 900); assert.equal(duel.H, 450);
+  assert.equal(duel.waterY, 450 - 42);
+  assert.equal(duel.teams[0].snails[0].x, 220);
+  assert.equal(duel.teams[1].snails[0].x, 680);
+  assert.ok(duel.snails.every((s) => s.y > 0 && s.y < 450), 'snails must stand on the small map');
+  // still deterministic and replayable
+  run(duel, 60 * 30);
+  const rep = new Game(null, { ...duel.config }, {}, { replay: JSON.parse(JSON.stringify(duel.recording)) });
+  run(rep, duel.tickCount);
+  assert.equal(rep.stateHash(), duel.stateHash(), 'duel replay diverged');
+});
+
+
 if (failed) { console.log(`\n${failed} test(s) failed`); process.exit(1); }
 console.log('\nall tests passed');
