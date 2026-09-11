@@ -897,6 +897,7 @@ if (snigelpost.available()) {
   const redirectTo = () => location.origin + location.pathname;
   const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
   renderAccount = async function () {
+    if (!platform.allowAccounts) return; // portal iframe: the pointer to snails.se is shown instead
     const st = $('account-status'), row = $('account-row'), out = $('btn-logout');
     try {
       const u = await online.user(true);
@@ -1187,6 +1188,8 @@ if (platform.id === 'poki') {
   for (const id of ['online-title', 'online-blurb', 'opt-bestof-label', 'btn-online-create', 'online-list', 'account']) $(id)?.setAttribute('hidden', '');
   document.body.classList.add('portal');
 }
+// Portals where Snigelpost works but accounts cannot be linked (itch): say where to go instead.
+if (!platform.allowAccounts && platform.allowExternalLinks) $('account-portal').hidden = false;
 window.__platformReady = platform.init().then(() => platform.loaded());
 
 // ---------- PWA ----------

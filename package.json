@@ -1,6 +1,6 @@
 {
   "name": "snackmageddon",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "Turbaserat artilleri-spel med afrikanska jättesnäckor. PWA utan byggsteg.",
   "type": "module",

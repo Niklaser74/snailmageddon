@@ -860,6 +860,17 @@ await test('Google Play (TWA): everything as on the web except purchases, the da
   await page.close();
 });
 
+await test('itch: no account linking inside the portal, a pointer to snails.se instead', async () => {
+  const { page, errors } = await open('/?platform=itch');
+  await page.waitForSelector('#online:not([hidden])');
+  assert.equal(await page.locator('#account-row').isHidden(), true, 'no Google/e-mail row on itch');
+  assert.equal(await page.locator('#account-portal').isVisible(), true, 'the pointer to snails.se is shown');
+  assert.equal(await page.locator('#account-portal a').getAttribute('href'), 'https://snails.se/snailmageddon/');
+  assert.equal(await page.locator('#account-status').textContent(), '', 'renderAccount stays quiet on itch');
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 await test('service worker registers and manifest is valid', async () => {
   const { page, errors } = await open('/');
   const sw = await page.evaluate(async () => {

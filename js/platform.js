@@ -11,6 +11,9 @@
 //   platform.allowExternalLinks  false on portals that forbid links out of the game
 //   platform.allowPayments       false where the store's own billing is mandatory (Google Play) or payments are banned (Poki)
 //   platform.useServiceWorker    false when hosted inside a portal iframe
+//   platform.allowAccounts       false inside portal iframes: Google refuses to sign in
+//                                in a frame, the portal's CDN origin is not among
+//                                Supabase's redirect URLs, and it changes per upload
 
 function detect() {
   if (typeof location === 'undefined') return 'web';
@@ -33,6 +36,7 @@ const noop = {
   allowExternalLinks: true,
   allowPayments: true,
   useServiceWorker: true,
+  allowAccounts: true,
   async init() {},
   loaded() {},
   gameplayStart() {},
@@ -57,6 +61,7 @@ const poki = {
   allowExternalLinks: false,
   allowPayments: false,
   useServiceWorker: false,
+  allowAccounts: false,
   sdk: null,
   ready: false, // true once PokiSDK.init() has resolved; nothing is called on the SDK before that
   async init() {
@@ -100,6 +105,7 @@ const itch = {
   allowExternalLinks: true,
   allowPayments: false, // itch has its own store; keep the web build the only place that sells
   useServiceWorker: false, // itch serves the game from a sandboxed CDN origin per upload
+  allowAccounts: false, // anonymous Snigelpost works, linking does not (see above); the menu points to snails.se
 };
 
 // Google Play wraps the site in a Trusted Web Activity. Everything works as on the
