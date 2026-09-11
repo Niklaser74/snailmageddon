@@ -3,7 +3,7 @@
 *Snäckmageddon is a Worms-style, turn-based artillery game with giant African
 land snails, built as an installable PWA with no build step. The interface is
 available in Swedish and English (auto-detected, switchable in the menu). Play
-it at https://snails.se/ or on itch.io: https://knackpot.itch.io/snailmageddon.*
+it at https://snails.se/snailmageddon/ or on itch.io: https://knackpot.itch.io/snailmageddon.*
 
 Turbaserat artilleri-spel i Worms Armageddon-anda, fast med **afrikanska jättesnäckor**
 (Achatina) i stället för maskar. Byggt som en installerbar PWA i ren HTML/Canvas/JavaScript
@@ -18,8 +18,16 @@ npx serve .          # eller: python3 -m http.server 8080
 ```
 
 Öppna sedan `http://localhost:8080` (eller den port som skrivs ut). Publiceringen
-sker automatiskt till GitHub Pages vid varje push till `main`, på det egna
-domännamnet **snails.se** (filen `CNAME`).
+sker automatiskt till GitHub Pages vid varje push till `main`. Spelet ligger på
+**https://snails.se/snailmageddon/**: domänen sitter på hubben
+([Niklaser74/Niklaser74.github.io](https://github.com/Niklaser74/Niklaser74.github.io)),
+och GitHub Pages lägger varje repo på kontot under `snails.se/<repo>/`. Därför
+har det här repot ingen `CNAME` och inga rotrelativa sökvägar —
+`test/paths.test.mjs` stoppar dem, och samma regel är det som gör itch- och
+Poki-zipparna möjliga. Manifestets `"id": "/"` är kvar från tiden på roten och
+ska inte ändras: samma id gör att installerade appar uppdateras i stället för
+att bli dubbletter. Allt på snails.se delar origin, så cache-namn (`sw.js`)
+och `localStorage`-nycklar är prefixade med spelets namn.
 
 ## Snäckdesign
 

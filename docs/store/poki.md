@@ -7,7 +7,7 @@ förberett i koden.
 
 ## Vad du skickar in
 
-1. **Länk för granskning:** https://snails.se/?platform=poki
+1. **Länk för granskning:** https://snails.se/snailmageddon/?platform=poki
    (spelet går i Poki-läge: SDK:n laddas, inga länkar ut, inga konton).
    Lägg till `&pokidebug=1` för SDK:ns testläge.
 2. **Bygge för Pokis hosting:** `node scripts/build-poki.mjs` ger

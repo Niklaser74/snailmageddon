@@ -10,10 +10,11 @@ signeringsnyckeln och själva uppladdningen är dina; allt annat är förberett.
 - `manifest.webmanifest`: id, beskrivning, kategorier, maskable-ikon,
   skärmdumpar för både brett och smalt format, genväg till Dagens skott.
 - `android/twa-manifest.json`: Bubblewraps konfiguration (paket
-  `se.snails.app`, start-URL `/?twa=1`, notiser på, genväg). `bubblewrap
+  `se.snails.app`, start-URL `/snailmageddon/?twa=1`, notiser på, genväg). `bubblewrap
   build` i den mappen räcker.
-- `.well-known/assetlinks.json` på snails.se med plats för fingeravtrycket
-  (`.nojekyll` gör att GitHub Pages serverar mappen).
+- `.well-known/assetlinks.json` på snails.se med plats för fingeravtrycket.
+  Digital Asset Links måste svara på domänroten, så filen ligger i hubbens repo
+  (`Niklaser74.github.io`), inte här.
 - `privacy.html` på snails.se, svenska och engelska. Play kräver en
   integritetspolicy-URL: https://snails.se/privacy.html
 - I appen (`platform.id === 'android'`, känns igen på `android-app://`
@@ -56,7 +57,7 @@ Utan rätt fingeravtryck öppnas appen som en vanlig Chrome-flik med adressfält
    (`bubblewrap fingerprint list` visar det, eller
    `keytool -list -v -keystore android.keystore`).
 3. Kontrollera: https://snails.se/.well-known/assetlinks.json ska svara med
-   JSON, och `bubblewrap validate --url https://snails.se` eller Googles
+   JSON, och `bubblewrap validate --url https://snails.se/snailmageddon/` eller Googles
    Statement List Generator ska bli grön.
 
 ## Play Console, steg för steg

@@ -32,6 +32,17 @@ export const push = {
     await online.rpc('snails_save_push', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_lang: lang });
     return sub;
   },
+  // After the move from the root of snails.se the game has a new service worker
+  // (scope /snailmageddon/) and the old subscription went with the old one.
+  // Notification permission is per origin and still granted, so subscribe again
+  // quietly. Resolves to the subscription, or null when nothing was done.
+  async resubscribe(lang) {
+    try {
+      if (!this.supported() || this.permission() !== 'granted' || this.needsInstall() || !online.userId()) return null;
+      if (await this.current()) return null;
+      return await this.subscribe(lang);
+    } catch { return null; } // Safari wants a user gesture: the button in the waiting overlay is still there
+  },
   // Ask the server to notify the other player. Fire and forget.
   async notify(matchId, event) {
     try {

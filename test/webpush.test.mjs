@@ -6,7 +6,7 @@ import { encryptPayload, decryptPayload, vapidAuthorization, b64url, b64urlDecod
 const user = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
 const auth = crypto.getRandomValues(new Uint8Array(16));
 const sub = { endpoint: 'https://fcm.googleapis.com/fcm/send/abc', keys: { p256dh: b64url(await crypto.subtle.exportKey('raw', user.publicKey)), auth: b64url(auth) } };
-const text = JSON.stringify({ title: 'Snäckmageddon', body: 'Anna har spelat. Din tur!', url: 'https://snails.se/?match=x' });
+const text = JSON.stringify({ title: 'Snäckmageddon', body: 'Anna har spelat. Din tur!', url: 'https://snails.se/snailmageddon/?match=x' });
 const body = await encryptPayload(sub, text);
 assert.equal(body[20], 65, 'key id length');
 assert.deepEqual([...body.slice(16, 20)], [0, 0, 16, 0], 'record size');

@@ -6,6 +6,7 @@ const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const STRIPE_KEY = Deno.env.get('STRIPE_SECRET_KEY') || '';
 const PRICES: Record<string, string | undefined> = { gold: Deno.env.get('STRIPE_PRICE_GOLD'), tophat: Deno.env.get('STRIPE_PRICE_TOPHAT') };
 const SITE = 'https://snails.se';
+const GAME = `${SITE}/snailmageddon`;
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -36,8 +37,8 @@ Deno.serve(async (req) => {
       customer_email: u.email,
       'metadata[item]': item,
       'metadata[user]': uid,
-      success_url: `${SITE}/?bought=${item}`,
-      cancel_url: `${SITE}/?cancelled=${item}`,
+      success_url: `${GAME}/?bought=${item}`,
+      cancel_url: `${GAME}/?cancelled=${item}`,
       locale: lang === 'sv' ? 'sv' : 'en',
     });
     const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
