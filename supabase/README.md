@@ -2,8 +2,12 @@
 
 Snäckmageddon kör mot Supabase-projektet **`snails`** (`lygpfumngyebxoqqncet`,
 region eu-north-1 Stockholm, org Knackpot AB). Projektet är avsett för hela
-snigelserien: varje spel får eget tabellprefix (`snails_` är Snäckmageddons),
-och konton, rating och Vault delas.
+snigelserien: varje spel får eget tabellprefix (`snails_` är Snäckmageddons,
+`snailchess_` Snäckschacks — se snailchess-repots `supabase/README.md`), och
+konton, push-prenumerationer, rating och Vault delas. Snäckschack delar även
+sessionsnyckeln `snackmageddon.session` i `localStorage` (samma origin), så en
+inloggning gäller båda. Migrationer från andra spel appliceras med MCP, inte
+`supabase db push` härifrån.
 
 Klienten är `js/supa.js` (auth + RPC utan bibliotek), `js/analytics.js`
 (mätning) och `js/push.js` (Web Push). URL och publishable key ligger i
