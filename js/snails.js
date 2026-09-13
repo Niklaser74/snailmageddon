@@ -140,7 +140,20 @@ function eyeStalks(ctx, o, cfg) {
         ctx.lineTo(tx + eyeR, ty - eyeR);
         ctx.stroke();
       }
+    } else if (cfg.eyeR > 0) {
+      // A style that has eyes is here because they are pulled in: leave a stub
+      // of tentacle in the body colour. A dark tip would read as sunglasses.
+      ctx.fillStyle = cfg.stalkColor;
+      ctx.beginPath();
+      ctx.arc(tx, ty, cfg.stalkW * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      if (cfg.outline) {
+        ctx.strokeStyle = cfg.outline;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
     } else {
+      // a style whose stalks end in a dark point by design
       ctx.fillStyle = cfg.tipColor || '#222';
       ctx.beginPath();
       ctx.arc(tx, ty, cfg.stalkW * 0.9, 0, Math.PI * 2);
