@@ -13,6 +13,10 @@
 //     dead,          draw as a gravestone-ish empty shell
 //     look,          cosmetics { shell, hat } (js/cosmetics.js), optional
 //     hp,            health 0–100: cracks appear below 70, optional
+//     retract,       0–1, how far the eye stalks are pulled in, optional.
+//                    A touched snail snaps them in and lets them back out
+//                    slowly. At 1 the stalks are stubs on the head. The pixel
+//                    style ignores it: its stalks are part of the sprite map.
 //   })
 import { drawShellPattern, drawHat, drawCracks } from './cosmetics.js';
 
@@ -82,10 +86,16 @@ function ellipse(ctx, x, y, rx, ry, rot = 0) {
 
 function eyeStalks(ctx, o, cfg) {
   // cfg: {x0, y0, len, spread, sway, eyeR, pupilR, stalkW, stalkColor, angry, aim}
-  const sway = Math.sin(o.t * 4) * (o.walking ? 3 : 1);
+  // o.retract 0–1 pulls the stalks in: shorter, stiller, and the eyes shrink
+  // with them until only a stub is left. That is what a real snail does the
+  // moment it is touched.
+  const out = 1 - Math.max(0, Math.min(1, o.retract || 0));
+  const sway = Math.sin(o.t * 4) * (o.walking ? 3 : 1) * out;
+  const len = cfg.len * out;
+  const eyeR = cfg.eyeR * out;
   const stalks = [
-    { dx: -3, top: -cfg.len, lean: -3 + sway },
-    { dx: 4, top: -cfg.len - 3, lean: 2 + sway },
+    { dx: -3, top: -len, lean: (-3 + sway) * out },
+    { dx: 4, top: -len - 3 * out, lean: (2 + sway) * out },
   ];
   for (const s of stalks) {
     const bx = cfg.x0 + s.dx;
@@ -99,11 +109,12 @@ function eyeStalks(ctx, o, cfg) {
     ctx.moveTo(bx, by);
     ctx.quadraticCurveTo(bx + 2, by + s.top * 0.5, tx, ty);
     ctx.stroke();
-    // eye
-    if (cfg.eyeR > 0) {
+    // eye — once it is pulled in far enough there is nothing left but a stub
+    if (cfg.eyeR > 0 && eyeR > 0.8) {
+      const pupilR = cfg.pupilR * out;
       ctx.fillStyle = '#fff';
       ctx.beginPath();
-      ctx.arc(tx, ty - 1, cfg.eyeR, 0, Math.PI * 2);
+      ctx.arc(tx, ty - 1, eyeR, 0, Math.PI * 2);
       ctx.fill();
       if (cfg.outline) {
         ctx.strokeStyle = cfg.outline;
@@ -111,22 +122,22 @@ function eyeStalks(ctx, o, cfg) {
         ctx.stroke();
       }
       const a = o.aim ?? 0;
-      const px = tx + Math.cos(a) * cfg.eyeR * 0.4;
-      const py = ty - 1 - Math.sin(a) * cfg.eyeR * 0.4;
+      const px = tx + Math.cos(a) * eyeR * 0.4;
+      const py = ty - 1 - Math.sin(a) * eyeR * 0.4;
       ctx.fillStyle = '#1b1b1b';
       ctx.beginPath();
-      ctx.arc(px, py, cfg.pupilR, 0, Math.PI * 2);
+      ctx.arc(px, py, pupilR, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.beginPath();
-      ctx.arc(px - cfg.pupilR * 0.35, py - cfg.pupilR * 0.4, cfg.pupilR * 0.3, 0, Math.PI * 2);
+      ctx.arc(px - pupilR * 0.35, py - pupilR * 0.4, pupilR * 0.3, 0, Math.PI * 2);
       ctx.fill();
       if (cfg.angry) {
         ctx.strokeStyle = '#3a2a1a';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(tx - cfg.eyeR - 1, ty - cfg.eyeR - 3);
-        ctx.lineTo(tx + cfg.eyeR, ty - cfg.eyeR);
+        ctx.moveTo(tx - eyeR - 1, ty - eyeR - 3);
+        ctx.lineTo(tx + eyeR, ty - eyeR);
         ctx.stroke();
       }
     } else {
