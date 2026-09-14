@@ -41,7 +41,7 @@ uppladdning. Därför går det inte att koppla kontot till Google eller e-post
 där: Google vägrar logga in inuti en iframe, itch-adressen står inte bland
 Supabases tillåtna redirect-URL:er, och sessionen skulle ändå hamna på fel
 origin. Sedan 2026-09-11 (`platform.allowAccounts`) döljs Google- och
-e-postraden i itch-läget och menyn hänvisar till snails.se/snailmageddon i
+e-postraden i itch-läget och menyn hänvisar till snails.se/account (seriens kontosida) i
 stället. Anonym Snigelpost, Dagens skott och säsongen fungerar, men det anonyma
 kontot nollställs när en ny version laddas upp (ny origin). Nämn det gärna i
 sidtexten om spelare frågar.

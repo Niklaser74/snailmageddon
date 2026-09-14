@@ -1,6 +1,6 @@
 {
   "name": "snackmageddon",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "description": "Turbaserat artilleri-spel med afrikanska jättesnäckor. PWA utan byggsteg.",
   "type": "module",
@@ -10,7 +10,8 @@
     "test:browser": "node test/browser.test.mjs",
     "test:all": "npm test && npm run test:browser",
     "build:itch": "node scripts/build-itch.mjs",
-    "migrate:supabase": "node scripts/migrate-supabase.mjs"
+    "migrate:supabase": "node scripts/migrate-supabase.mjs",
+    "sync:account": "node scripts/sync-account.mjs"
   },
   "license": "UNLICENSED",
   "devDependencies": {

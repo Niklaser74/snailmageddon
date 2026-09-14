@@ -4,12 +4,15 @@ Snäckmageddon kör mot Supabase-projektet **`snails`** (`lygpfumngyebxoqqncet`,
 region eu-north-1 Stockholm, org Knackpot AB). Projektet är avsett för hela
 snigelserien: varje spel får eget tabellprefix (`snails_` är Snäckmageddons,
 `snailchess_` Snäckschacks — se snailchess-repots `supabase/README.md`), och
-konton, push-prenumerationer, rating och Vault delas. Snäckschack delar även
-sessionsnyckeln `snackmageddon.session` i `localStorage` (samma origin), så en
-inloggning gäller båda. Migrationer från andra spel appliceras med MCP, inte
+konton, push-prenumerationer, rating och Vault delas. Kontot är seriens:
+sessionen ligger under `snails.session` i `localStorage` (samma origin) och
+klienten `js/account.js` ägs av hubben (`Niklaser74.github.io`), som också har
+kontosidan https://snails.se/account/ för Google/e-post, namn och utseende. Migrationer från andra spel appliceras med MCP, inte
 `supabase db push` härifrån.
 
-Klienten är `js/supa.js` (auth + RPC utan bibliotek), `js/analytics.js`
+Klienten är seriens delade `js/account.js` (auth + RPC utan bibliotek; ägs av
+hubben `Niklaser74.github.io` och vendoras hit med `npm run sync:account` —
+redigera den aldrig här; `js/supa.js` re-exporterar den), `js/analytics.js`
 (mätning) och `js/push.js` (Web Push). URL och publishable key ligger i
 `js/config.js` — de är publika per design; row level security och
 security-definer-funktionerna bestämmer vad nyckeln får göra.

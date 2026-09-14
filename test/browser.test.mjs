@@ -579,7 +579,7 @@ await test('account: link an e-mail, then sign in with a login link on another d
   assert.equal(await a.locator('#account-row').isHidden(), true);
   assert.equal(await a.locator('#btn-logout').isHidden(), false);
   await a.waitForSelector('.mrow');
-  assert.equal(await a.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidA);
+  assert.equal(await a.evaluate(() => JSON.parse(localStorage.getItem('snails.session')).user_id), uidA);
   // device B: anonymous at first, asks for a login link with the same address
   const b = await ctxB.newPage(); b.setDefaultTimeout(20000); await fake.install(b);
   await b.goto(base + '/'); await b.waitForFunction(() => !document.getElementById('account-row').hidden);
@@ -592,11 +592,11 @@ await test('account: link an e-mail, then sign in with a login link on another d
   await b.goto('about:blank'); await b.goto(base + '/' + fake.clickMail(fake.mails[1]));
   await b.waitForFunction(() => /linked to anna@example.test|kopplat till anna@example.test/.test(document.getElementById('account-status').textContent));
   await b.waitForSelector('.mrow');
-  assert.equal(await b.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidA, 'B should now be the same user as A');
+  assert.equal(await b.evaluate(() => JSON.parse(localStorage.getItem('snails.session')).user_id), uidA, 'B should now be the same user as A');
   // sign out gives a fresh anonymous account on this device
   await b.click('#btn-logout');
   await b.waitForFunction(() => !document.getElementById('account-row').hidden);
-  assert.notEqual(await b.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidA);
+  assert.notEqual(await b.evaluate(() => JSON.parse(localStorage.getItem('snails.session')).user_id), uidA);
   await ctxA.close(); await ctxB.close();
 });
 
@@ -613,7 +613,7 @@ await test('Google: link an anonymous account, sign in with it elsewhere, a take
   await a.waitForFunction(() => /via Google/.test(document.getElementById('account-status').textContent));
   assert.equal(await a.evaluate(() => location.hash), '');
   assert.match(await a.locator('#account-msg').textContent(), /now linked|nu kopplat/);
-  assert.equal(await a.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidA);
+  assert.equal(await a.evaluate(() => JSON.parse(localStorage.getItem('snails.session')).user_id), uidA);
   assert.equal(fake.google.owner, uidA);
   await a.waitForSelector('.mrow');
   // B: a fresh device signs in with the same Google account and becomes A
@@ -622,20 +622,20 @@ await test('Google: link an anonymous account, sign in with it elsewhere, a take
   await b.click('#btn-google'); // two hops: the link attempt is refused, then it signs in as the owner
   await b.waitForFunction(() => /signed in|inloggad/i.test(document.getElementById('account-msg')?.textContent || ''));
   await b.waitForSelector('.mrow');
-  assert.equal(await b.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidA);
+  assert.equal(await b.evaluate(() => JSON.parse(localStorage.getItem('snails.session')).user_id), uidA);
   // C: anonymous with a match of its own; the Google identity already belongs to A
   const c = await ctxC.newPage(); c.setDefaultTimeout(20000); await fake.install(c);
   await c.goto(base + '/'); await c.waitForFunction(() => !document.getElementById('account-row').hidden);
   await c.fill('#opt-name', 'Carl'); await c.click('#btn-online-create');
   await c.waitForSelector('#waiting:not([hidden])'); await c.click('#btn-wait-menu');
-  const uidC = await c.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id);
+  const uidC = await c.evaluate(() => JSON.parse(localStorage.getItem('snails.session')).user_id);
   assert.notEqual(uidC, uidA);
   await c.click('#btn-google');
   await c.waitForFunction(() => /another player account|annat spelarkonto/.test(document.getElementById('account-msg')?.textContent || ''));
-  assert.equal(await c.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidC, 'still Carl until he chooses to switch');
+  assert.equal(await c.evaluate(() => JSON.parse(localStorage.getItem('snails.session')).user_id), uidC, 'still Carl until he chooses to switch');
   await c.click('#btn-google-login');
   await c.waitForFunction(() => /via Google/.test(document.getElementById('account-status').textContent));
-  assert.equal(await c.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidA);
+  assert.equal(await c.evaluate(() => JSON.parse(localStorage.getItem('snails.session')).user_id), uidA);
   // e-mail rate limit is explained, not shown as a raw error
   await c.click('#btn-logout'); await c.waitForFunction(() => !document.getElementById('account-row').hidden);
   fake.google.rateLimited = true;
@@ -668,14 +668,14 @@ await test('Google: the e-mail already has an account (linked by e-mail earlier)
   const mail = fake.mails[fake.mails.length - 1];
   await a.goto('about:blank'); await a.goto(base + '/' + fake.clickMail(mail));
   await a.waitForFunction(() => /dana@example.test/.test(document.getElementById('account-status').textContent));
-  const uidA = await a.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id);
+  const uidA = await a.evaluate(() => JSON.parse(localStorage.getItem('snails.session')).user_id);
   fake.google.owner = null; fake.google.email = 'dana@example.test';
   const b = await ctxB.newPage(); b.setDefaultTimeout(20000); await fake.install(b);
   await b.goto(base + '/'); await b.waitForFunction(() => !document.getElementById('account-row').hidden);
   await b.click('#btn-google'); // link is refused with email_exists in the query string, then it signs in as Dana
   await b.waitForFunction(() => /via Google/.test(document.getElementById('account-status')?.textContent || ''));
   assert.equal(await b.evaluate(() => location.search), '', 'the error is removed from the URL');
-  assert.equal(await b.evaluate(() => JSON.parse(localStorage.getItem('snackmageddon.session')).user_id), uidA);
+  assert.equal(await b.evaluate(() => JSON.parse(localStorage.getItem('snails.session')).user_id), uidA);
   await ctxA.close(); await ctxB.close();
 });
 
@@ -762,8 +762,9 @@ await test('buying premium cosmetics: needs a linked e-mail, starts Checkout, un
   assert.match(await gold.textContent(), /Buy|Köp/);
   assert.equal(await page.locator('#pick-hat button[data-id=tophat]').isDisabled(), false);
   // buying goes through the buy function, which sends the browser to Checkout (the fake sends it straight back)
-  await page.click('#pick-shell button[data-id=gold]');
-  await page.waitForFunction(() => document.querySelector('#pick-shell button[data-id=gold]')?.classList.contains('locked') && location.search === '', null, { timeout: 5000 }).catch(() => {});
+  // the fake Checkout sends the browser straight back to ?bought=gold, which the page then cleans up
+  await Promise.all([page.waitForURL((u) => u.search.includes('bought=gold') || u.search === '', { timeout: 10000 }), page.click('#pick-shell button[data-id=gold]')]);
+  await page.waitForFunction(() => location.search === '', null, { timeout: 10000 });
   assert.deepEqual(fake.checkouts, [{ uid, item: 'gold' }]);
   // back on the site with ?bought=gold before the webhook has landed: waits, then the grant arrives
   await page.goto('about:blank');
@@ -865,7 +866,8 @@ await test('itch: no account linking inside the portal, a pointer to snails.se i
   await page.waitForSelector('#online:not([hidden])');
   assert.equal(await page.locator('#account-row').isHidden(), true, 'no Google/e-mail row on itch');
   assert.equal(await page.locator('#account-portal').isVisible(), true, 'the pointer to snails.se is shown');
-  assert.equal(await page.locator('#account-portal a').getAttribute('href'), 'https://snails.se/snailmageddon/');
+  assert.equal(await page.locator('#account-portal a').getAttribute('href'), 'https://snails.se/account/');
+  assert.equal(await page.locator('#account-series').isHidden(), true, 'the series link is web-only');
   assert.equal(await page.locator('#account-status').textContent(), '', 'renderAccount stays quiet on itch');
   assert.deepEqual(errors, []);
   await page.close();

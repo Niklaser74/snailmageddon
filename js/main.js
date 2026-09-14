@@ -1190,6 +1190,7 @@ if (platform.id === 'poki') {
 }
 // Portals where Snigelpost works but accounts cannot be linked (itch): say where to go instead.
 if (!platform.allowAccounts && platform.allowExternalLinks) $('account-portal').hidden = false;
+if (platform.id !== 'web') $('account-series').hidden = true;
 window.__platformReady = platform.init().then(() => platform.loaded());
 
 // ---------- PWA ----------

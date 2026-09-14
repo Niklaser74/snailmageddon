@@ -1,6 +1,6 @@
 // Service worker: cache-first app shell so the game works offline.
 // Cache names are prefixed per game: everything on snails.se shares one origin.
-const VERSION = 'snailmageddon-v38';
+const VERSION = 'snailmageddon-v39';
 const ASSETS = [
   './',
   './index.html',
@@ -18,6 +18,7 @@ const ASSETS = [
   './js/config.js',
   './js/platform.js',
   './js/supa.js',
+  './js/account.js',
   './js/online.js',
   './js/push.js',
   './icons/icon.svg',
