@@ -134,7 +134,9 @@ spelare och UTC-dag: bästa poäng, antal försök, vapen, regelversion och
 inspelningen av det bästa skottet. `snails_daily_submit` tar emot ett försök
 (bara dagens eller gårdagens datum, poäng 0–450, stödd regelversion) och
 behåller det bästa; `snails_daily_board` ger topp tio och anroparens egen
-placering. Rader äldre än 60 dagar städas.
+placering. Rader äldre än 60 dagar städas. Inspelningen får vara upp till 200 kB
+(`20260914180000_daily_recording_limit.sql`; det gamla taket 20 kB räckte inte för
+ett långt skott med pekkontroller, där varje knappändring sparas som en hel ram).
 
 Banan, vapnet och målen kommer ur datumet (`js/daily.js`), så alla spelar
 samma skott. Servern litar på klientens poäng men sparar inspelningen, så en
