@@ -20,8 +20,33 @@ const LS_LEGACY = 'snackmageddon.session';
 let session = null;
 let userCache = null;
 let pendingToken = null;
+let held = null; // a callback waiting for the player to confirm it
 
 function store() { try { return globalThis.localStorage; } catch { return null; } }
+function tabStore() { try { return globalThis.sessionStorage; } catch { return null; } }
+// A redirect is only accepted if this browser started one. Without it any link
+// with #access_token= signs the player into whichever account the link carries —
+// the attacker's — and a later Google link moves that identity there too.
+// sessionStorage, so the attempt dies with the tab and never leaks to another.
+const SS_PENDING = 'snails.pendingAuth';
+const PENDING_MAX_AGE = 15 * 60 * 1000;
+function markAuthStarted() {
+  const ss = tabStore();
+  try { ss?.setItem(SS_PENDING, JSON.stringify({ at: Date.now(), uid: loadSession()?.user_id || null })); } catch { /* blocked */ }
+}
+// Reading it also spends it: one attempt, one callback. Returns 'no-storage'
+// when the browser blocks sessionStorage: refusing there would lock those
+// players out of Google altogether, and localStorage is blocked with it, so the
+// session they would get could not be stored anyway.
+function takeAuthStarted() {
+  const ss = tabStore();
+  if (!ss) return 'no-storage';
+  let p = null;
+  try { p = JSON.parse(ss.getItem(SS_PENDING) || 'null'); } catch { p = null; }
+  try { ss.removeItem(SS_PENDING); } catch { /* blocked */ }
+  if (!p || typeof p.at !== 'number' || Date.now() - p.at > PENDING_MAX_AGE) return null;
+  return p;
+}
 function loadSession() {
   if (session) return session;
   const ls = store();
@@ -190,10 +215,32 @@ export const online = {
     history.replaceState(null, '', location.pathname + ([...qs].length ? '?' + qs : ''));
     if (q.get('error')) return { type: 'error', code: q.get('error_code') || null, message: (q.get('error_description') || q.get('error')).replace(/\+/g, ' ') };
     const access = q.get('access_token');
-    saveSession({ access_token: access, refresh_token: q.get('refresh_token'), expires_at: Date.now() + (+q.get('expires_in') || 3600) * 1000, user_id: jwtSub(access) });
+    const type = q.get('type') || 'oauth'; // OAuth returns carry no type
+    const incoming = { access_token: access, refresh_token: q.get('refresh_token'), expires_at: Date.now() + (+q.get('expires_in') || 3600) * 1000, user_id: jwtSub(access) };
+    const started = takeAuthStarted();
+    // Google always starts in this browser, so a callback without an attempt is
+    // someone else's link. Drop it; the URL is already cleaned above.
+    if (type === 'oauth' && !started) return { type: 'error', code: 'unsolicited', message: 'no sign-in was started here' };
+    // A mail link may legitimately be opened on another device, where no attempt
+    // exists. Hold the session instead of dropping it, and let the player say yes.
+    if (!started) { held = incoming; return { type, needsConfirm: true, userId: incoming.user_id }; }
+    saveSession(incoming);
     userCache = null;
-    return { type: q.get('type') || 'oauth' }; // OAuth returns carry no type
+    return { type };
   },
+  // Adopt a session that handleRedirect held for confirmation. Nothing happens
+  // until this is called, so an unexpected mail link cannot swap the account.
+  confirmHeld() {
+    if (!held) return null;
+    const s = held;
+    held = null;
+    saveSession(s);
+    userCache = null;
+    return { type: 'confirmed', userId: s.user_id };
+  },
+  heldUserId() { return held?.user_id || null; },
+  // Call before sending the browser to Google or asking for a mail link.
+  startAuth() { markAuthStarted(); },
   // userId() may be unknown right after a redirect (no JWT payload); ask the server once
   async ensureUserId() {
     const s = loadSession();
