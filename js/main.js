@@ -928,17 +928,27 @@ if (snigelpost.available()) {
     try {
       try { sessionStorage.setItem(LS_BEFORE, online.userId() || ''); } catch { /* ignore */ }
       const url = await online.googleUrl(redirectTo(), link);
+      online.startAuth(); // the callback is only accepted because of this
       track('account', { action: link ? 'google-link' : 'google-login' });
       location.assign(url);
     } catch (e) { $('account-msg').textContent = accountError(e); }
   };
   $('btn-google').addEventListener('click', () => goGoogle(!!online.userId()));
   $('btn-google-login').addEventListener('click', () => goGoogle(false));
-  accountAction($('btn-link-email'), async (email) => { await online.linkEmail(email, redirectTo()); return t('account.linkSent', { email }); });
-  accountAction($('btn-login-email'), async (email) => { await online.sendLoginLink(email, redirectTo()); return t('account.loginSent', { email }); });
+  // startAuth() first: opened in this browser the link needs no extra confirmation
+  accountAction($('btn-link-email'), async (email) => { online.startAuth(); await online.linkEmail(email, redirectTo()); return t('account.linkSent', { email }); });
+  accountAction($('btn-login-email'), async (email) => { online.startAuth(); await online.sendLoginLink(email, redirectTo()); return t('account.loginSent', { email }); });
   $('btn-logout').addEventListener('click', () => { online.signOut(); location.reload(); });
   // coming back from a confirmation link, a login link or Google
   const afterAuth = async (back) => {
+    if (back.needsConfirm) { // a mail link opened where the sign-in was not started
+      $('account-msg').textContent = t('account.confirmHint');
+      $('btn-confirm-link').hidden = false;
+      $('btn-confirm-link').addEventListener('click', () => {
+        online.confirmHeld(); $('btn-confirm-link').hidden = true; afterAuth({ type: back.type });
+      }, { once: true });
+      return;
+    }
     if (back.type === 'error') {
       if (back.code === 'identity_already_exists' || back.code === 'email_exists') {
         // the Google account (or its e-mail) already has a player account: with nothing
