@@ -382,3 +382,13 @@ förnyad och refresh-token utfärdad (`snails_last_seen`) — anonyma spelare
 loggar aldrig in igen, de förnyar bara. Undantagna: kopplade konton, konton
 med köp, och Snail Story-konton med kopia av lådan eller en påminnelse kvar.
 Policyn (snails.se/privacy.html) säger samma sak; ändras villkoren ska den ändras.
+
+## Push-prenumerationer (2026-10-02)
+
+`snails_push_subscriptions` saknar spelkolumn, så varje notify-funktion skickade
+till alla användarens prenumerationer i alla spel: notiserna läckte mellan
+spelen på snails.se. Snigelkrattan, Snail Story, Snailman, Snäckschack och
+Luffarsnigel har nu egna tabeller (`<prefix>_push_subscriptions`), och deras
+`<prefix>_save_push` tar bort samma endpoint härifrån när spelet öppnas. Det
+som blir kvar i `snails_push_subscriptions` är Snäckmageddons. Ett nytt spel
+med push ska ha en egen tabell, inte använda den här.
