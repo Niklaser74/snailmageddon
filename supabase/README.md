@@ -368,3 +368,8 @@ seriens integritetspolicy (snails.se/privacy.html) lovar. Migrationerna heter
 **Ny tabell med ett spelar-id ska ha samma nyckel**, annars stämmer policyn
 inte längre. Kontroll: frågan i snailman-repots `supabase/README.md`
 (avsnittet Radering) ska ge `missing = 0`.
+
+`snails_delete_account(p_confirm)` (`20261002170000_delete_account.sql`) låter
+en inloggad spelare radera sitt eget konto från https://snails.se/account/.
+Funktionen raderar bara raden i `auth.users`; nycklarna ovan tar resten.
+`p_confirm` måste vara ordet spelaren skrev (`RADERA` eller `DELETE`).
