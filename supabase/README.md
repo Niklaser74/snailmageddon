@@ -373,3 +373,12 @@ inte längre. Kontroll: frågan i snailman-repots `supabase/README.md`
 en inloggad spelare radera sitt eget konto från https://snails.se/account/.
 Funktionen raderar bara raden i `auth.users`; nycklarna ovan tar resten.
 `p_confirm` måste vara ordet spelaren skrev (`RADERA` eller `DELETE`).
+
+Övergivna anonyma konton raderas av `snails_cleanup_anonymous()`
+(`20261002190000_cleanup_anonymous.sql`, cron `snails_cleanup_anonymous`
+03:53 UTC, högst 500 per natt): anonyma konton som inte använts på 365 dagar.
+"Använts" är det senaste av skapat, inloggat, användarraden ändrad, session
+förnyad och refresh-token utfärdad (`snails_last_seen`) — anonyma spelare
+loggar aldrig in igen, de förnyar bara. Undantagna: kopplade konton, konton
+med köp, och Snail Story-konton med kopia av lådan eller en påminnelse kvar.
+Policyn (snails.se/privacy.html) säger samma sak; ändras villkoren ska den ändras.
