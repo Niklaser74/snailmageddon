@@ -353,3 +353,18 @@ Så gjordes det, i den ordningen:
    -vyer, `cron.unschedule` på de två jobben, Vault-hemligheten tas bort och
    anonyma inloggningar stängs av. SMTP och Google-provider lämnas där (Nissebus
    mejlar via `noreply@snails.se` tills den får egen domän).
+
+# Radering av konto
+
+Sedan 2026-10-02 har varje kolumn i projektet som håller ett spelar-id en
+främmande nyckel mot `auth.users` med `on delete cascade` (`winner_user`:
+`set null`). Raderas ett konto, i dashboarden eller med
+`delete from auth.users where id = …`, försvinner allt som hör till det i
+alla spel. En match, ett parti eller en serie raderas i sin helhet, även för
+motståndaren; en turnering i Snailman raderas om kontot var värd. Det är vad
+seriens integritetspolicy (snails.se/privacy.html) lovar. Migrationerna heter
+`*_account_cascade.sql` i respektive spels repo (den här för `snails_*`).
+
+**Ny tabell med ett spelar-id ska ha samma nyckel**, annars stämmer policyn
+inte längre. Kontroll: frågan i snailman-repots `supabase/README.md`
+(avsnittet Radering) ska ge `missing = 0`.
