@@ -399,3 +399,13 @@ med push ska ha en egen tabell, inte använda den här.
 och poäng) och antal spelare, alltså det dagslistan redan visar alla. Hubben
 skapar aldrig konton och anropar den med den publika nyckeln. Samma mönster
 som `snailrake_daily_leader` och `snailman_daily_leader`.
+
+# Namn
+
+Namnen i matcher, serier och Dagens skott är kontots: profilnamnet i
+`snails_profiles` när spelaren valt ett, annars det namn spelet skickade.
+"Snäcka" räknas inte som ett val. Before-triggers på `snails_matches`,
+`snails_series` (`0` = värd, `1` = gäst) och `snails_daily` sätter namnet, och
+triggern `snails_profile_renamed` på `snails_profiles` tar ett namnbyte på
+kontosidan till alla rader (`20261004160000_profile_names.sql`). Klienten låter
+kontots namn vinna över ett lokalt sparat. Samma regel som i seriens övriga spel.

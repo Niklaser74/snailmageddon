@@ -420,7 +420,9 @@ async function loadProfile() {
     profileState = { unlocked: p.unlocked, stats: p.stats, online: true, canBuy: !!p.canBuy, awards: p.awards || [] };
     settings.stats = p.stats;
     settings.extraUnlocked = p.unlocked.filter((id) => !unlockedFor(p.stats).includes(id)); // bought and awarded, for offline
-    if (p.name && !settings.playerName) { settings.playerName = p.name; $('opt-name').value = p.name; }
+    // The account's name wins (snails.se/account/): the server writes it into every match and
+    // daily shot anyway. 'Snäcka' is only the profile's default for an empty name, not a choice.
+    if (p.name && (p.name !== 'Snäcka' || !settings.playerName)) { settings.playerName = p.name; $('opt-name').value = p.name; }
     // the server's copy wins when it has one; otherwise push the local look up
     if (p.look && p.look.shell) settings.look = normalizeLook(p.look, p.unlocked);
     else await snigelpost.profileSet(playerName(), settings.look).catch(() => {});
