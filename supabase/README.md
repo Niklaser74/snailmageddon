@@ -392,3 +392,10 @@ Luffarsnigel har nu egna tabeller (`<prefix>_push_subscriptions`), och deras
 `<prefix>_save_push` tar bort samma endpoint härifrån när spelet öppnas. Det
 som blir kvar i `snails_push_subscriptions` är Snäckmageddons. Ett nytt spel
 med push ska ha en egen tabell, inte använda den här.
+
+## Hubbens kort (2026-10-03)
+
+`snails_daily_leader()` är öppen för anon: dagens ledare i Dagens skott (namn
+och poäng) och antal spelare, alltså det dagslistan redan visar alla. Hubben
+skapar aldrig konton och anropar den med den publika nyckeln. Samma mönster
+som `snailrake_daily_leader` och `snailman_daily_leader`.
